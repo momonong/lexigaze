@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>IntelligentGaze 認知閱讀實驗</title>
+    <script src="https://cdn.jsdelivr.net/npm/webgazer@3.3.0/dist/webgazer.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f4f4f9;
+        }
+        #experiment-container {
+            width: 80%;
+            max-width: 800px;
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .reading-text {
+            font-size: 24px;
+            line-height: 1.8;
+            text-align: left;
+            display: none; /* 預設隱藏，校準後顯示 */
+        }
+        /* 目標單字 */
+        .target-word { 
+            font-weight: normal; 
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            margin-top: 20px;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        #status {
+            color: #d9534f;
+            margin-bottom: 20px;
+        }
+        #data-counter {
+            margin-top: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+        .calibration-instruction {
+            display: none;
+            background: #fff3cd;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            border-left: 5px solid #ffc107;
+        }
+    </style>
+</head>
+<body>
+
+<div id="experiment-container">
+    <h2 id="status">步驟 1：請允許相機權限，並進行眼動校準</h2>
+    
+    <button id="start-btn" onclick="startCalibration()">開始眼動校準</button>
+
+    <div id="calibration-section" class="calibration-instruction">
+        <p><strong>校準教學：</strong>請在螢幕上隨機點擊 10-20 次，同時看著你的鼠標。這能幫助系統學習你的視線規律。</p>
+        <button id="proceed-btn" onclick="startReading()">校準完成，開始閱讀</button>
+    </div>
+
+    <div id="reading-section" class="reading-text">
+        <p>
+            The <span id="word-1" class="target-word">ubiquitous</span> 
+            <span id="word-2" class="target-word">phenomenon</span> 
+            completely <span id="word-3" class="target-word">bewildered</span> 
+            the inexperienced researcher.
+        </p>
+        <p>
+            Despite rigorous analysis, the underlying mechanisms remained 
+            <span id="word-4" class="target-word">enigmatic</span>, 
+            defying conventional explanation.
+        </p>
+        <div id="data-counter">已收集數據點: 0</div>
+        <button onclick="stopExperimentAndDownload()">完成閱讀 (下載 CSV)</button>
+    </div>
+</div>
+
+<script>
+let gazeData = []; // 存放收集到的數據
+    let isReading = false;
+    let webgazerInstance = null; // 用來確認實體
+
+    // 頁面載入時，先讓 WebGazer 在背景暖機，但不顯示畫面
+    window.onload = function() {
+        console.log("網頁載入完成，正在背景初始化 WebGazer...");
+        
+        webgazer.setGazeListener(function(data, elapsedTime) {
+            if (data == null) {
+                return; // 還沒抓到臉
+            }
+
+            // 只有在進入閱讀模式時，才把資料塞進陣列
+            if (isReading) {
+                gazeData.push({
+                    timestamp: Math.round(elapsedTime),
+                    x: Math.round(data.x),
+                    y: Math.round(data.y)
+                });
+                
+                // 每收集 10 筆更新一次畫面數字，避免畫面卡頓
+                if (gazeData.length % 10 === 0) {
+                    document.getElementById('data-counter').innerText = `已收集數據點: ${gazeData.length}`;
+                }
+            }
+        }).begin();
+
+        // 隱藏初始的輔助點，等使用者按「開始校準」才顯示
+        webgazer.showVideoPreview(false);
+        webgazer.showPredictionPoints(false);
+        
+        console.log("WebGazer 監聽器已掛載。等待使用者點擊開始。");
+    };
+
+    // 學生點擊「開始眼動校準」
+    function startCalibration() {
+        console.log("開始校準流程...");
+        document.getElementById('start-btn').style.display = 'none';
+        
+        // 確保 WebGazer 已經 Ready
+        const checkReady = setInterval(() => {
+            if (webgazer.isReady()) {
+                console.log("WebGazer is ready! 顯示視訊畫面。");
+                clearInterval(checkReady);
+                
+                document.getElementById('status').innerText = "步驟 2：請看著滑鼠，並在螢幕上隨機點擊 10-20 次進行校準。";
+                document.getElementById('calibration-section').style.display = 'block';
+                
+                // 顯示視訊畫面與紅點
+                webgazer.showVideoPreview(true);
+                webgazer.showPredictionPoints(true);
+            } else {
+                document.getElementById('status').innerText = "相機啟動中... 若畫面未出現，請確認瀏覽器已允許相機權限。";
+            }
+        }, 500);
+    }
+
+    // 學生點擊「校準完成，開始閱讀」
+    function startReading() {
+        console.log("進入閱讀模式！開始記錄座標。");
+        document.getElementById('calibration-section').style.display = 'none';
+        document.getElementById('status').innerText = "步驟 3：請開始閱讀以下短文";
+        document.getElementById('reading-section').style.display = 'block';
+        
+        isReading = true; // 打開紀錄開關
+        gazeData = []; // 清空可能在校準時不小心錄到的雜訊
+        document.getElementById('data-counter').innerText = "已收集數據點: 0";
+        
+        // 隱藏視訊畫面，讓學生專心閱讀
+        webgazer.showVideoPreview(false); 
+        webgazer.showPredictionPoints(false);
+    }
+
+    // 停止並下載
+    function stopExperimentAndDownload() {
+        console.log(`準備下載。總共收集到 ${gazeData.length} 筆資料。`);
+        isReading = false;
+        
+        // 1. 強制關閉相機綠燈
+        const videoElement = document.getElementById('webgazerVideoFeed');
+        if (videoElement && videoElement.srcObject) {
+            videoElement.srcObject.getTracks().forEach(track => track.stop());
+        }
+        
+        // 2. 徹底關閉 WebGazer
+        webgazer.end();
+
+        if (gazeData.length === 0) {
+            alert("錯誤：未偵測到任何數據！請確認相機有照到您的臉部。");
+            return;
+        }
+
+        // 3. 將 Array 轉為 CSV
+        let csvRows = ["timestamp,x_px,y_px"];
+        gazeData.forEach(function(row) {
+            csvRows.push(`${row.timestamp},${row.x},${row.y}`);
+        });
+        const csvString = csvRows.join("\n");
+
+        // 4. 下載 CSV
+        const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.setAttribute("href", url);
+        link.setAttribute("download", "my_eyes.csv");
+        link.style.visibility = 'hidden';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        document.getElementById('status').innerText = "✅ 實驗完成！相機已關閉，數據已下載。";
+        document.getElementById('reading-section').style.display = 'none';
+    }
+</script>
+
+</body>
+</html>
