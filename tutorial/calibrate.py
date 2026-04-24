@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 # 模組 1：資料讀取 (寫死，學生不動)
 # ==========================================
 try:
-    df = pd.read_csv('my_eyes.csv')
+    # 加上 r 前綴，確保 Windows 路徑的反斜線不會報錯
+    df = pd.read_csv(r'tutorial\data\my_eyes.csv')
     print(f"成功載入 {len(df)} 筆原始眼動數據！")
 except FileNotFoundError:
     print("錯誤：找不到 my_eyes.csv")
@@ -35,7 +36,16 @@ df['vibe_y'] = df['baseline_y']
 
 
 # ==========================================
-# 模組 4：視覺化成效驗證 (寫死，學生不動)
+# 模組 4：輸出校準結果 (資料工程解耦)
+# ==========================================
+output_path = r'tutorial\data\calibrated_eyes.csv'
+# 輸出成新檔案，index=False 代表不輸出 DataFrame 的列編號
+df.to_csv(output_path, index=False)
+print(f"✅ 校準完成！包含神經符號特徵的資料已匯出至：{output_path}")
+
+
+# ==========================================
+# 模組 5：視覺化成效驗證 (寫死，學生不動)
 # ==========================================
 plt.figure(figsize=(12, 7))
 
@@ -58,4 +68,5 @@ plt.ylabel('Screen Y')
 plt.gca().invert_yaxis()
 plt.legend()
 plt.grid(True, linestyle=':', alpha=0.6)
+plt.savefig("tutorial/figures/result.png")
 plt.show()
