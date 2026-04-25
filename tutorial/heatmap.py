@@ -2,6 +2,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import os
+import textwrap
 
 # ==========================================
 # 1. 設定路徑與環境
@@ -12,55 +13,79 @@ CALIB_FILE = os.path.join(DATA_DIR, "calibrated_eyes.csv")
 SAVE_DIR = r"tutorial\figures"
 os.makedirs(SAVE_DIR, exist_ok=True)
 
-# 假設螢幕解析度 (這會影響繪圖範圍)
 SCREEN_WIDTH, SCREEN_HEIGHT = 1920, 1080 
 
-def create_heatmap(csv_path, title, save_name, color_map="Reds"):
+# ==========================================
+# 2. 核心繪圖邏輯
+# ==========================================
+def draw_background_text(ax, text, x_center, y_center):
+    """在背景鋪上測試用的英文短文，並自動換行"""
+    wrapped_text = textwrap.fill(text, width=60) # 控制每行字數
+    ax.text(
+        x_center, y_center, wrapped_text, 
+        fontsize=24, color='gray', alpha=0.3, # 透明度調低，不搶熱力圖焦點
+        ha='center', va='center', 
+        bbox=dict(facecolor='white', alpha=0.6, edgecolor='none')
+    )
+
+def plot_kde_on_ax(ax, csv_path, title, color_map, text_content):
+    """在指定的子圖 (ax) 上繪製 KDE 熱力圖"""
     if not os.path.exists(csv_path):
-        print(f"⚠️ 找不到檔案: {csv_path}，跳過此圖。")
+        ax.set_title(f"⚠️ 找不到檔案: {os.path.basename(csv_path)}")
+        ax.axis('off')
         return
 
     df = pd.read_csv(csv_path)
     
-    # 建立畫布
-    plt.figure(figsize=(12, 7))
-    
-    # 繪製熱力圖 (使用 Kernel Density Estimation)
-    # x_px, y_px 是原始欄位；如果是校準後的，請確認欄位名稱是 vibe_x/vibe_y 或 x_px
+    # [優化] 防呆機制：過濾掉超出螢幕的極端雜訊與 NaN，否則 KDE 會變形
     x_col = 'vibe_x' if 'vibe_x' in df.columns else 'x_px'
     y_col = 'vibe_y' if 'vibe_y' in df.columns else 'y_px'
+    df = df.dropna(subset=[x_col, y_col])
+    df = df[(df[x_col] >= 0) & (df[x_col] <= SCREEN_WIDTH)]
+    df = df[(df[y_col] >= 0) & (df[y_col] <= SCREEN_HEIGHT)]
 
+    # 繪製背景文字
+    draw_background_text(ax, text_content, SCREEN_WIDTH/2, SCREEN_HEIGHT/2)
+
+    # [優化] bw_adjust 控制平滑度 (預設 1.0 太散，0.5 較適合眼動的注視點)
     sns.kdeplot(
         data=df, x=x_col, y=y_col, 
-        fill=True, thresh=0.05, levels=10, cmap=color_map, alpha=0.8
+        fill=True, thresh=0.05, levels=15, 
+        cmap=color_map, alpha=0.75, ax=ax, bw_adjust=0.5
     )
 
-    # 標示目標單字位置 (假設 phenomenon 在 450, 320)
-    plt.scatter(450, 320, color='green', marker='*', s=300, label='Target Word')
+    # 設定坐標軸
+    ax.set_xlim(0, SCREEN_WIDTH)
+    ax.set_ylim(SCREEN_HEIGHT, 0) # 反轉 Y 軸
+    ax.set_title(title, fontsize=18, fontweight='bold', pad=15)
+    ax.set_xlabel("Screen X (px)")
+    ax.set_ylabel("Screen Y (px)")
+
+# ==========================================
+# 3. 產出 Before/After 對照儀表板
+# ==========================================
+def generate_dashboard():
+    print("🎨 正在生成 Neuro-Symbolic 成效對照儀表板...")
     
-    # 設定坐標軸範圍與方向 (模擬螢幕)
-    plt.xlim(0, SCREEN_WIDTH)
-    plt.ylim(0, SCREEN_HEIGHT)
-    plt.gca().invert_yaxis() # 讓 (0,0) 在左上角
+    # 這裡放學生真正在讀的那段測試文本
+    sample_text = "The phenomenon of quantum entanglement implies that particles can be correlated across vast distances, challenging our classical intuition."
     
-    plt.title(title, fontsize=16)
-    plt.xlabel("Screen X (px)")
-    plt.ylabel("Screen Y (px)")
-    plt.legend()
+    # 建立 1x2 的並排畫布
+    fig, axes = plt.subplots(1, 2, figsize=(24, 9), dpi=120)
     
-    # 儲存圖片
-    output_img = os.path.join(SAVE_DIR, save_name)
-    plt.savefig(output_img)
-    print(f"✅ 熱力圖已儲存至: {output_img}")
+    # 左圖：純神經網路感知 (雜訊多、發散)
+    plot_kde_on_ax(axes[0], RAW_FILE, "Phase 1: Raw Neural Perception (Noisy)", "Reds", sample_text)
+    
+    # 右圖：神經符號融合 (收斂在生難字上)
+    plot_kde_on_ax(axes[1], CALIB_FILE, "Phase 3: Neuro-Symbolic Calibrated", "Blues", sample_text)
+    
+    plt.tight_layout(pad=3.0)
+    
+    # 儲存與顯示
+    output_img = os.path.join(SAVE_DIR, "neuro_symbolic_dashboard.png")
+    plt.savefig(output_img, bbox_inches='tight')
+    print(f"✅ 對照圖已儲存至: {output_img}")
     plt.show()
 
-# ==========================================
-# 2. 執行繪圖 (對照組與實驗組)
-# ==========================================
-print("🎨 正在生成熱力圖對照表...")
-
-# 原始數據熱力圖 (紅色系)
-create_heatmap(RAW_FILE, "Heatmap: Raw Gaze Data (Neural Noise)", "heatmap_raw.png", "Reds")
-
-# 校準後數據熱力圖 (藍色系)
-create_heatmap(CALIB_FILE, "Heatmap: Neuro-Symbolic Calibrated Gaze", "heatmap_calibrated.png", "Blues")
+if __name__ == "__main__":
+    generate_dashboard()

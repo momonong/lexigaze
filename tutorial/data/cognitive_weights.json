@@ -1,8 +1,40 @@
 {
-    "phenomenon": {
-        "x": 450,
-        "y": 320,
-        "surprisal": 6.63,
-        "alpha": 0.44
+    "text": "The ubiquitous phenomenon completely bewildered the inexperienced researcher.",
+    "target_analysis": {
+        "target_word": "phenomenon",
+        "char_span": {
+            "start": 15,
+            "end": 25
+        },
+        "token_positions": [
+            3
+        ],
+        "token_pieces": [
+            "phenomenon"
+        ],
+        "num_subtokens": 1,
+        "word_surprisal": 6.6298909187316895,
+        "avg_subtoken_surprisal": 6.6298909187316895,
+        "token_details": [
+            {
+                "position": 3,
+                "token": "phenomenon",
+                "log_prob": -6.629891,
+                "surprisal": 6.629891
+            }
+        ]
+    },
+    "knowledge_base": {
+        "phenomenon": {
+            "x": 450,
+            "y": 320,
+            "surprisal": 6.6299,
+            "avg_subtoken_surprisal": 6.6299,
+            "token_pieces": [
+                "phenomenon"
+            ],
+            "num_subtokens": 1,
+            "alpha": 0.442
+        }
     }
 }
