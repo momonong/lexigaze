@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 # ==========================================
 try:
     # 加上 r 前綴，確保 Windows 路徑的反斜線不會報錯
-    df = pd.read_csv(r'tutorial\data\my_eyes.csv')
+    df = pd.read_csv('tutorial/data/my_eyes.csv')
     print(f"成功載入 {len(df)} 筆原始眼動數據！")
 except FileNotFoundError:
     print("錯誤：找不到 my_eyes.csv")
