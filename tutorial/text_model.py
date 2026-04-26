@@ -169,7 +169,7 @@ print(
 print(f"✅ 已儲存至 {kb_path}")
 
 print("\n📊 [2/3] 正在載入硬體眼動數據...")
-csv_path = os.path.join(DATA_DIR, "my_eyes.csv")
+csv_path = os.path.join(DATA_DIR, "raw.csv")
 
 if os.path.exists(csv_path):
     df = pd.read_csv(csv_path)
@@ -199,9 +199,19 @@ def apply_gravity(row):
 
 df[["vibe_x", "vibe_y"]] = df.apply(apply_gravity, axis=1)
 
-output_path = os.path.join(DATA_DIR, "calibrated_eyes.csv")
-df.to_csv(output_path, index=False)
-print(f"✅ 校準完成！融合結果已匯出至 {output_path}")
+# 輸出 Baseline 對照組
+baseline_output = os.path.join(DATA_DIR, "baseline.csv")
+df_baseline = df[['timestamp', 'baseline_x', 'baseline_y']].rename(columns={'baseline_x': 'x_px', 'baseline_y': 'y_px'})
+df_baseline.to_csv(baseline_output, index=False)
+
+# 輸出最終 Calibrated 結果
+calibrated_output = os.path.join(DATA_DIR, "calibrated.csv")
+df_calibrated = df[['timestamp', 'vibe_x', 'vibe_y']].rename(columns={'vibe_x': 'x_px', 'vibe_y': 'y_px'})
+df_calibrated.to_csv(calibrated_output, index=False)
+
+print(f"✅ 校準完成！")
+print(f"  - 基線對照 (Baseline) 匯出至 {baseline_output}")
+print(f"  - 最終校準 (Calibrated) 匯出至 {calibrated_output}")
 
 plt.figure(figsize=(10, 6))
 plt.scatter(df["x_px"], df["y_px"], color="lightcoral", alpha=0.3, label="1. Raw Webcam Noise")

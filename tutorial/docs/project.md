@@ -4,13 +4,13 @@
 
 本專案旨在展示 **Neuro-Symbolic AI (神經符號人工智慧)** 在邊緣運算 (Edge AI) 的應用。由於硬體限制 (如低成本 Webcam) 產生的數據通常帶有嚴重的雜訊與偏移，我們引入 Large Language Model (LLM) 提取的「語言先驗知識」來校準硬體感知的誤差。
 
-### 核心工作流 (The 3-Phase Workflow)
+### Core Workflow (3 Components)
 
-| 階段 | 任務名稱 | 核心工具 | 產出檔案 |
+| Component | Task | Tools | Output File |
 | :--- | :--- | :--- | :--- |
-| **Phase 1** | **感知層 (Perception)** | `index.html` (WebGazer) | `data/my_eyes.csv` |
-| **Phase 2** | **認知層 (Cognition)** | `text_model.py` (BERT Tiny) | `data/cognitive_weights.json` |
-| **Phase 3** | **融合層 (Fusion)** | `calibrate.py` (Gravity Snap) | `data/calibrated_eyes.csv` |
+| **Perception** | Hardware Gaze Capture | `index.html` (WebGazer) | `data/raw.csv` |
+| **Cognition** | Symbolic Prior Extraction | `text_model.py` (BERT Tiny) | `data/cognitive_weights.json` |
+| **Fusion** | Neuro-Symbolic Calibration | `calibrate.py` (Gravity Snap) | `data/baseline.csv`, `data/calibrated.csv` |
 
 ---
 

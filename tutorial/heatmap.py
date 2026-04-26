@@ -8,8 +8,8 @@ import textwrap
 # 1. 設定路徑與環境
 # ==========================================
 DATA_DIR = r"tutorial\data"
-RAW_FILE = os.path.join(DATA_DIR, "my_eyes.csv")
-CALIB_FILE = os.path.join(DATA_DIR, "calibrated_eyes.csv")
+RAW_FILE = os.path.join(DATA_DIR, "raw.csv")
+CALIB_FILE = os.path.join(DATA_DIR, "calibrated.csv")
 SAVE_DIR = r"tutorial\figures"
 os.makedirs(SAVE_DIR, exist_ok=True)
 

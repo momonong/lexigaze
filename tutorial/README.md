@@ -15,7 +15,7 @@ Using the "Symbolic Prior" extracted by a Large Language Model to calibrate the 
 Signals from edge devices are inherently dirty (noisy).
 1. Open `index.html` and read the short text on the screen.
 2. The system will capture your gaze coordinates in real-time via WebGazer (a lightweight facial mesh model).
-3. Export your personal dataset: `my_eyes.csv`.
+3. Export your personal dataset: `p1_raw.csv`.
 
 *(Reflection point: Can a traditional Moving Average filter solve the issue of your entire gaze trajectory systematically drifting downwards?)*
 
@@ -36,7 +36,7 @@ Open Colab. We will load the ultra-lightweight `bert-tiny` model (only 18MB, ens
 ---
 
 ## 🧲 Phase 3: Neuro-Symbolic Fusion Engine (The Vibe Coding Challenge)
-Now, you possess both the noisy raw eye trajectory (`my_eyes.csv`) and the purely rational linguistic prior (`cognitive_weights.json`).
+Now, you possess both the noisy raw eye trajectory (`p1_raw.csv`) and the purely rational linguistic prior (`cognitive_weights.json`).
 
 **Your Vibe Coding Task:**
 In the sandbox section of `calibrate.py`, use natural language prompts to have the AI write a "gravitational snap" algorithm for you.

@@ -1,16 +1,22 @@
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+import os
+
+# ==========================================
+# 1. 設定路徑
+# ==========================================
+DATA_DIR = r"tutorial\data"
+RAW_FILE = os.path.join(DATA_DIR, "raw.csv")
 
 # ==========================================
 # 模組 1：資料讀取 (寫死，學生不動)
 # ==========================================
 try:
-    # 加上 r 前綴，確保 Windows 路徑的反斜線不會報錯
-    df = pd.read_csv('tutorial/data/my_eyes.csv')
+    df = pd.read_csv(RAW_FILE)
     print(f"成功載入 {len(df)} 筆原始眼動數據！")
 except FileNotFoundError:
-    print("錯誤：找不到 my_eyes.csv")
+    print(f"錯誤：找不到 {RAW_FILE}")
     exit()
 
 # ==========================================
@@ -38,10 +44,19 @@ df['vibe_y'] = df['baseline_y']
 # ==========================================
 # 模組 4：輸出校準結果 (資料工程解耦)
 # ==========================================
-output_path = r'tutorial\data\calibrated_eyes.csv'
-# 輸出成新檔案，index=False 代表不輸出 DataFrame 的列編號
-df.to_csv(output_path, index=False)
-print(f"✅ 校準完成！包含神經符號特徵的資料已匯出至：{output_path}")
+# 輸出 Baseline 對照組
+baseline_output = os.path.join(DATA_DIR, 'baseline.csv')
+df_baseline = df[['timestamp', 'baseline_x', 'baseline_y']].rename(columns={'baseline_x': 'x_px', 'baseline_y': 'y_px'})
+df_baseline.to_csv(baseline_output, index=False)
+
+# 輸出最終 Calibrated 結果
+calibrated_output = os.path.join(DATA_DIR, 'calibrated.csv')
+df_calibrated = df[['timestamp', 'vibe_x', 'vibe_y']].rename(columns={'vibe_x': 'x_px', 'vibe_y': 'y_px'})
+df_calibrated.to_csv(calibrated_output, index=False)
+
+print(f"✅ 校準完成！")
+print(f"  - 基線對照 (Baseline) 匯出至：{baseline_output}")
+print(f"  - 最終校準 (Calibrated) 匯出至：{calibrated_output}")
 
 
 # ==========================================
