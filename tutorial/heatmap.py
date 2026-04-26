@@ -19,13 +19,17 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 1920, 1080
 # 2. 核心繪圖邏輯
 # ==========================================
 def draw_background_text(ax, text, x_center, y_center):
-    """在背景鋪上測試用的英文短文，並自動換行"""
-    wrapped_text = textwrap.fill(text, width=60) # 控制每行字數
+    """模擬 index.html 的排版：置中且支援多行"""
+    paragraphs = text.split('\n')
+    formatted_text = ""
+    for p in paragraphs:
+        formatted_text += textwrap.fill(p, width=50) + "\n\n"
+    
     ax.text(
-        x_center, y_center, wrapped_text, 
-        fontsize=24, color='gray', alpha=0.3, # 透明度調低，不搶熱力圖焦點
-        ha='center', va='center', 
-        bbox=dict(facecolor='white', alpha=0.6, edgecolor='none')
+        x_center, y_center, formatted_text.strip(), 
+        fontsize=20, color='gray', alpha=0.2,
+        ha='center', va='center', fontfamily='serif',
+        bbox=dict(facecolor='white', alpha=0.5, edgecolor='none')
     )
 
 def plot_kde_on_ax(ax, csv_path, title, color_map, text_content):
@@ -67,8 +71,11 @@ def plot_kde_on_ax(ax, csv_path, title, color_map, text_content):
 def generate_dashboard():
     print("🎨 正在生成 Neuro-Symbolic 成效對照儀表板...")
     
-    # 這裡放學生真正在讀的那段測試文本
-    sample_text = "The phenomenon of quantum entanglement implies that particles can be correlated across vast distances, challenging our classical intuition."
+    # 與 index.html 保持一致的測試文本
+    sample_text = (
+        "The ubiquitous phenomenon completely bewildered the inexperienced researcher.\n"
+        "Despite rigorous analysis, the underlying mechanisms remained enigmatic, defying conventional explanation."
+    )
     
     # 建立 1x2 的並排畫布
     fig, axes = plt.subplots(1, 2, figsize=(24, 9), dpi=120)

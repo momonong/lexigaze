@@ -41,9 +41,12 @@ tokenizer = AutoTokenizer.from_pretrained(MODEL_NAME)
 model = AutoModelForMaskedLM.from_pretrained(MODEL_NAME).to(device)
 model.eval()
 
-text = "The ubiquitous phenomenon completely bewildered the inexperienced researcher."
+text = (
+    "The ubiquitous phenomenon completely bewildered the inexperienced researcher.\n"
+    "Despite rigorous analysis, the underlying mechanisms remained enigmatic, defying conventional explanation."
+)
 target_word = "phenomenon"
-word_x, word_y = 450, 320
+word_x, word_y = 850, 500
 
 
 def find_word_char_span(text, target_word):

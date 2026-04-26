@@ -13,9 +13,14 @@ Using the "Symbolic Prior" extracted by a Large Language Model to calibrate the 
 
 ## 🛠️ Phase 1: The Harsh Reality — Collecting Edge Perception Data
 Signals from edge devices are inherently dirty (noisy).
-1. Open `index.html` and read the short text on the screen.
-2. The system will capture your gaze coordinates in real-time via WebGazer (a lightweight facial mesh model).
-3. Export your personal dataset: `p1_raw.csv`.
+
+1. Start the local data collection server:
+   ```bash
+   python server.py
+   ```
+2. Open your browser to **`http://localhost:8000`** and read the short text.
+3. The system will capture your gaze coordinates via WebGazer.
+4. Export your personal dataset: `raw.csv`.
 
 *(Reflection point: Can a traditional Moving Average filter solve the issue of your entire gaze trajectory systematically drifting downwards?)*
 

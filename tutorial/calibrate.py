@@ -74,8 +74,8 @@ plt.plot(df['baseline_x'], df['baseline_y'], color='orange', linewidth=1.5, line
 plt.scatter(df['vibe_x'], df['vibe_y'], color='darkblue', alpha=0.8, label='3. Vibe-Coded Gaze (Neuro-Symbolic)')
 
 # 標示引力目標 (這裡先寫死示範)
-plt.scatter(450, 320, color='green', marker='*', s=300, edgecolor='black', zorder=5)
-plt.text(465, 335, 'phenomenon (alpha=0.8)', fontsize=12, fontweight='bold', color='green')
+plt.scatter(850, 500, color='green', marker='*', s=300, edgecolor='black', zorder=5)
+plt.text(865, 515, 'phenomenon (alpha=0.8)', fontsize=12, fontweight='bold', color='green')
 
 plt.title('IntelligentGaze: Baseline vs. Vibe Coding Optimization', fontsize=16)
 plt.xlabel('Screen X')

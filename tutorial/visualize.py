@@ -20,13 +20,17 @@ SCREEN_WIDTH, SCREEN_HEIGHT = 1920, 1080
 # 2. 核心繪圖與動畫邏輯
 # ==========================================
 def draw_background_text(ax, text, x_center, y_center):
-    """在背景鋪上測試用的英文短文，並自動換行"""
-    wrapped_text = textwrap.fill(text, width=60) # 控制每行字數
+    """模擬 index.html 的排版：置中且支援多行"""
+    paragraphs = text.split('\n')
+    formatted_text = ""
+    for p in paragraphs:
+        formatted_text += textwrap.fill(p, width=50) + "\n\n"
+    
     ax.text(
-        x_center, y_center, wrapped_text, 
-        fontsize=24, color='gray', alpha=0.3,
-        ha='center', va='center', 
-        bbox=dict(facecolor='white', alpha=0.6, edgecolor='none')
+        x_center, y_center, formatted_text.strip(), 
+        fontsize=20, color='gray', alpha=0.2,
+        ha='center', va='center', fontfamily='serif',
+        bbox=dict(facecolor='white', alpha=0.5, edgecolor='none')
     )
 
 def create_trajectory_gif(csv_path, output_gif_path, sample_text, title="Gaze Trajectory"):
@@ -110,7 +114,11 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
 
-    sample_text = "The phenomenon of quantum entanglement implies that particles can be correlated across vast distances, challenging our classical intuition."
+    # 與 index.html 保持一致的測試文本
+    sample_text = (
+        "The ubiquitous phenomenon completely bewildered the inexperienced researcher.\n"
+        "Despite rigorous analysis, the underlying mechanisms remained enigmatic, defying conventional explanation."
+    )
     
     # 定義所有可能的階段檔案對應
     all_files_mapping = {
