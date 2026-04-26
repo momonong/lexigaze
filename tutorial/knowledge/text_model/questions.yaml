@@ -1,0 +1,5 @@
+overview: "簡述 EyeLingo 系統的核心概念。它如何結合『眼動軌跡 (Gaze)』與『預訓練語言模型 (PLM, 如 RoBERTa/BERT)』來解決傳統眼動追蹤的準確度問題？"
+concepts: "論文指出，純靠眼動儀 (Gaze-based) 會有嚴重的硬體限制與誤差。請說明 PLM 提取的哪些『語言學特徵 (Linguistic Characteristics)』（如詞頻、詞性）能幫助判斷使用者的認知困難度？"
+methodology: "在我們的 IntelligentGaze 專案中，我們使用 bert-tiny 實作。請根據文獻的啟發，推導一段 Python 偽程式碼邏輯：如何將語言模型的預測機率 (Probability) 轉換為詞彙驚奇度 (Word Surprisal)，並將其對應到 UI 的『動態引力半徑 (Gravity Radius)』？"
+limitations: "根據論文的 Ablation Study（消融實驗），如果移除 PLM，F1-score 會發生什麼災難性的下降？這說明了在邊緣運算 (Edge AI) 設備中，為何『神經符號 (Neuro-Symbolic)』的認知補償比單純升級鏡頭硬體更有效？"
+qa: "設計 2 個 Vibe Coding 提問，引導資工背景的學生：如何使用 Transformers 套件在 Python 中載入輕量級模型，並計算出一句話中每個單字的 Surprisal 分數，最後匯出成 JSON 格式供前端使用。"

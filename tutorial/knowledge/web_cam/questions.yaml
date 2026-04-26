@@ -1,0 +1,5 @@
+overview: "簡述 baseline WebGazer 產生的 GIGO 問題，以及文獻提出的 3 個核心解決架構（TFFacemesh, 9-Point Calibration, Cursor-Guided Reading）。"
+concepts: "解釋為什麼必須明確設定 TFFacemesh tracker 與 ridge regression？若不使用 L2 regularization 會發生什麼事？"
+methodology: "詳細解釋『Cursor-Guided Reading (Flashlight)』的實作邏輯。為什麼需要將 mousemove 綁定到視覺焦點上？請列出關鍵的 CSS 遮罩語法重點。"
+limitations: "為什麼必須將閱讀區域限制在螢幕上方 65% (Optical Safe Zone)？請說明 Eyelid Occlusion 與 Purkinje Distortion 的物理原因。"
+qa: "設計 2 個針對這份文獻的 Vibe Coding 實作問答，包含如何設定 9 點校準的 CSS 絕對位置。"

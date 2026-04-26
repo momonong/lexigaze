@@ -1,0 +1,5 @@
+overview: "根據文獻，EyeLingo 如何結合眼動軌跡 (Gaze Trajectory) 與文本佈局 (Text Layout)？這種結合方式與傳統單純依靠座標偏移的校準有何不同？"
+concepts: "論文提到的『Positional Data Encoding』機制中，Encoder 是如何從 Gaze Trace 中提取特徵，而 Decoder又是如何利用這些特徵來預測目標詞彙的？"
+methodology: "這篇論文使用 T5 模型與 Cross-attention 模組來進行數據融合。雖然我們的專案是用更輕量的 Gravity Snap 公式，但請根據文獻建議，設計一個考慮到『單字頻率 (Term Frequency)』與『詞性 (POS)』的引力加權參數 alpha (α) 的計算邏輯。"
+limitations: "文獻指出，在行距較小 (Line Spacing 1.0-2.0) 的真實閱讀場景下，垂直誤差 (Vertical Error) 是校準的最大挑戰。請總結論文中如何處理這種雜訊，以防止『引力』將座標吸附到錯誤的行數上。"
+qa: "設計 2 個關於『如何實作動態引力校準』的 Vibe Coding 提問，引導學生思考：如何讀取 raw.csv 中的座標，並根據 cognitive_weights.json 中的 alpha 值，實作出一個能自動修正座標偏移的 Python 函式。"

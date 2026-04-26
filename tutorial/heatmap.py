@@ -7,10 +7,11 @@ import textwrap
 # ==========================================
 # 1. 設定路徑與環境
 # ==========================================
-DATA_DIR = r"tutorial\data"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
 RAW_FILE = os.path.join(DATA_DIR, "raw.csv")
 CALIB_FILE = os.path.join(DATA_DIR, "calibrated.csv")
-SAVE_DIR = r"tutorial\figures"
+SAVE_DIR = os.path.join(BASE_DIR, "figures")
 os.makedirs(SAVE_DIR, exist_ok=True)
 
 SCREEN_WIDTH, SCREEN_HEIGHT = 1920, 1080 

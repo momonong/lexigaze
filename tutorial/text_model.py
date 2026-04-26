@@ -6,9 +6,6 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-os.environ["HF_HOME"] = r"D:\hf_models"
-os.environ["HF_HUB_DISABLE_SYMLINKS_WARNING"] = "1"
-
 hf_token = os.getenv("HF_TOKEN")
 if hf_token:
     os.environ["HF_TOKEN"] = hf_token
@@ -21,8 +18,9 @@ import torch.nn.functional as F
 from transformers import AutoTokenizer, AutoModelForMaskedLM
 
 MODEL_NAME = "google/bert_uncased_L-2_H-128_A-2"
-DATA_DIR = r"tutorial\data"
-FIG_DIR = r"tutorial\figures"
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "data")
+FIG_DIR = os.path.join(BASE_DIR, "figures")
 
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(FIG_DIR, exist_ok=True)
