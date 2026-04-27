@@ -1,11 +1,21 @@
 # LexiGaze: Neuro-Symbolic & Vibe Coding Workshop
 
-## Laptop Setup
+## 💻 Laptop Setup
 Prepare your environment before the session starts:
 
 1. **Editor**: Use any editor you prefer (**VSCode**, **Cursor**, **Zed**, etc.). For minimalist enthusiasts, **Vim** or **Nano** are also perfectly fine.
 2. **Google Account**: Required for accessing Google AI Studio and Colab. A standard free-tier account is sufficient.
 3. **Environment**: Ensure you have Python 3.11+ installed. We recommend using a virtual environment.
+
+## 🚀 Getting Started
+
+```bash
+# 1. 下載專屬的 tutorial 分支
+git clone -b tutorial/lets-goooo https://github.com/momonong/lexigaze.git
+
+# 2. 進入專案資料夾
+cd lexigaze
+```
 
 ## Overview
 This workshop implements a Neuro-Symbolic AI architecture. We use **Neural Perception** (WebGazer) to capture gaze and **Symbolic Cognition** (LLM/BERT) to extract linguistic priors. These are fused via **Vibe Coding** to calibrate hardware errors.
@@ -90,18 +100,18 @@ Verify results via trajectory animation.
 
 | 組別 | 姓名 | 學號 | 系所 | 
 | :--- | :--- | :--- | :--- | 
-| 第一組 | 張盛文 | NM6134075 | 智慧科技碩士學程 
-| | 方滋堯 | NM6131069 | 智慧科技碩士學程 
-| | 蕭翔允 | U78111035 | 心理所 
-| | 陳姵蓉 | NP8121016 | 運算工程博士學程 
-| 第二組 | 彭成昊 | NM6141030 | 智慧科技碩士學程 
-| | 葉政晟 | L78131037 | 光電所 
-| | 古雲軒 | P76141576 | 資訊所 
-| | 宋容羽 | XX1142052 | 校際選課 
-| 第三組 | 林偉琦 | NM6131027 | 智慧科技碩士學程 
-| | 張襄翊 | NM6141022 | 智慧科技碩士學程 
-| | 郭勁恩 | NP8141024 | 運算工程博士學程
-| 第四組 | 黃柏瑋 | NM6154067 | 智慧科技碩士學程 
-| | 孫明瀚 | NM6144020 | 智慧科技碩士學程 
-| | 盧提文 | NP8141016 | 運算工程博士學程 
-| | 鄭九彰 | NP8141579 | 運算工程博士學程 
+| 第一組 | 張盛文 | NM6134075 | 智慧科技碩士學程 |
+| | 方滋堯 | NM6131069 | 智慧科技碩士學程 |
+| | 蕭翔允 | U78111035 | 心理所 |
+| | 陳姵蓉 | NP8121016 | 運算工程博士學程 |
+| 第二組 | 彭成昊 | NM6141030 | 智慧科技碩士學程 |
+| | 葉政晟 | L78131037 | 光電所 |
+| | 古雲軒 | P76141576 | 資訊所 |
+| | 宋容羽 | XX1142052 | 校際選課 |
+| 第三組 | 林偉琦 | NM6131027 | 智慧科技碩士學程 |
+| | 張襄翊 | NM6141022 | 智慧科技碩士學程 |
+| | 郭勁恩 | NP8141024 | 運算工程博士學程 |
+| 第四組 | 黃柏瑋 | NM6154067 | 智慧科技碩士學程 |
+| | 孫明瀚 | NM6144020 | 智慧科技碩士學程 |
+| | 盧提文 | NP8141016 | 運算工程博士學程 |
+| | 鄭九彰 | NP8141579 | 運算工程博士學程 |
