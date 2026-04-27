@@ -1,4 +1,4 @@
-# IntelligentGaze: Neuro-Symbolic & Vibe Coding Workshop
+# LexiGaze: Neuro-Symbolic & Vibe Coding Workshop
 
 ## Laptop Setup
 Prepare your environment before the session starts:
