@@ -1,13 +1,13 @@
 # LexiGaze: Neuro-Symbolic & Vibe Coding Workshop
 
-## 💻 Laptop Setup
+## Laptop Setup
 Prepare your environment before the session starts:
 
 1. **Editor**: Use any editor you prefer (**VSCode**, **Cursor**, **Zed**, etc.). For minimalist enthusiasts, **Vim** or **Nano** are also perfectly fine.
 2. **Google Account**: Required for accessing Google AI Studio and Colab. A standard free-tier account is sufficient.
 3. **Environment**: Ensure you have Python 3.11+ installed. We recommend using a virtual environment.
 
-## 🚀 Getting Started
+## Getting Started
 
 ```bash
 # 1. 下載專屬的 tutorial 分支
@@ -15,6 +15,10 @@ git clone -b tutorial/lets-goooo https://github.com/momonong/lexigaze.git
 
 # 2. 進入專案資料夾
 cd lexigaze
+
+# 3. 安裝 Gemini CLI 並完成登入
+npm install -g @google/gemini-cli
+gemini login
 ```
 
 ## Overview

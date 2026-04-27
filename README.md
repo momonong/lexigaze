@@ -15,6 +15,10 @@ git clone -b tutorial/lets-goooo https://github.com/momonong/lexigaze.git
 
 # 2. 進入專案資料夾
 cd lexigaze
+
+# 3. 安裝 Gemini CLI 並完成登入
+npm install -g @google/gemini-cli
+gemini login
 ```
 
 ## Overview
