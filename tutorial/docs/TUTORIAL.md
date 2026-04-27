@@ -1,60 +1,87 @@
-# IntelligentGaze: Neuro-Symbolic AI Workshop
+# IntelligentGaze: Neuro-Symbolic & Vibe Coding Workshop
+
+## Laptop Setup
+Prepare your environment before the session starts:
+
+1. **Editor**: Use any editor you prefer (**VSCode**, **Cursor**, **Zed**, etc.). For minimalist enthusiasts, **Vim** or **Nano** are also perfectly fine.
+2. **Google Account**: Required for accessing Google AI Studio and Colab. A standard free-tier account is sufficient.
+3. **Environment**: Ensure you have Python 3.11+ installed. We recommend using a virtual environment.
 
 ## Overview
-This tutorial demonstrates the implementation of a Neuro-Symbolic AI architecture. You will use a Large Language Model (LLM) to extract linguistic priors (Symbolic Cognition) to calibrate noisy gaze data from an edge eye-tracker (Neural Perception).
+This workshop implements a Neuro-Symbolic AI architecture. We use **Neural Perception** (WebGazer) to capture gaze and **Symbolic Cognition** (LLM/BERT) to extract linguistic priors. These are fused via **Vibe Coding** to calibrate hardware errors.
 
 ## Prerequisites
-Python 3.10+ is required. Install the necessary dependencies:
+Manage dependencies via `uv`, `conda`, or `pip`.
+
+### Using uv
 ```bash
-pip install torch transformers pandas matplotlib seaborn numpy scipy flask python-dotenv
+uv sync
 ```
 
-## Phase 1: Neural Perception (Data Collection)
-Capture raw gaze data using a web-based eye-tracker.
+### Using pip
+```bash
+pip install matplotlib pandas python-dotenv google-genai pdfplumber pyyaml
+```
 
-1. Start the local data collection server:
+## Step 0: Environment Setup
+Configure your Gemini API key for knowledge extraction.
+
+1. Obtain a free API key from [Google AI Studio](https://aistudio.google.com/).
+2. Create a `.env` file in the project root:
+   ```env
+   GEMINI_API_KEY="your_api_key_here"
+   ```
+
+## Step 1: Perception (Data Collection)
+Capture raw, noisy gaze coordinates.
+
+1. Start the collection server:
    ```bash
    python tutorial/server.py
    ```
-2. Open your browser to `http://localhost:8000`.
-3. Allow camera access and follow the on-screen calibration steps.
-4. Read the provided text. The system captures your gaze coordinates via WebGazer.
-5. Export your dataset as `raw.csv` and ensure it is located in `tutorial/data/raw.csv`.
+2. Open `http://localhost:8000` in your browser.
+3. Complete calibration and read the text provided.
+4. Export data to `tutorial/data/raw.csv`.
 
-## Phase 2: Symbolic Cognition (Prior Extraction)
-Use a BERT model to calculate "Word Surprisal" and determine gravitational weights for calibration.
+## Step 2: Cognition (Prior Extraction)
+Analyze linguistic difficulty to guide calibration.
 
-1. Run the cognitive extraction script:
+### 2.1 Quantitative Analysis (Google Colab)
+Compute "Word Surprisal" using `bert-tiny` (Torch-dependent).
+1. Open the provided Colab notebook.
+2. Run the BERT analysis on the target text.
+3. Save the resulting `cognitive_weights.json` to `tutorial/data/`.
+
+### 2.2 Skill Building (Local Knowledge Translation)
+Extract symbolic rules from academic papers using Gemini.
+1. Run the Skill Builder:
    ```bash
-   python tutorial/text_model.py
+   python tutorial/skill_builder.py
    ```
-   - This script uses `bert-tiny` to analyze word difficulty.
-   - It calculates the Surprisal score for the target word "phenomenon".
-   - It generates `tutorial/data/cognitive_weights.json` containing the calibration weight (Alpha).
+2. Review extracted domain knowledge in `tutorial/skills/`.
 
-## Phase 3: Neuro-Symbolic Fusion (Calibration)
-Apply the symbolic prior to the raw neural perception data to correct hardware errors.
+## Step 3: Fusion (Neuro-Symbolic Calibration)
+Fuse noisy perception with symbolic priors using Vibe Coding.
 
-1. Run the calibration engine:
+1. Execute the calibration engine:
    ```bash
    python tutorial/calibrate.py
    ```
-   - This script applies a Moving Average filter (Baseline).
-   - It executes a "Gravity Snap" algorithm using the Alpha weight from Phase 2.
-   - It produces `baseline.csv` and `calibrated.csv` in the `tutorial/data/` directory.
+   - Applies Moving Average (Baseline).
+   - Implements "Gravity Snap" based on cognitive weights.
+   - Outputs results to `tutorial/data/calibrated.csv`.
 
-## Phase 4: Verification (Visual Analytics)
-Compare the raw perception against the calibrated neuro-symbolic output.
+## Step 4: Verification (Visual Analytics)
+Verify results via trajectory animation.
 
-1. Generate the comparison dashboard:
+1. Generate gaze GIFs:
    ```bash
-   python tutorial/heatmap.py
+   python tutorial/visualize.py --target all
    ```
-   - This script creates Kernel Density Estimation (KDE) heatmaps.
-   - Review the results in `tutorial/figures/neuro_symbolic_dashboard.png`.
+2. View animations in `tutorial/figures/`.
 
 ## Core Component Summary
-- **server.py**: Local host for the WebGazer frontend.
-- **text_model.py**: LLM-based linguistic surprisal calculator.
+- **server.py**: Local host for eye-tracking frontend.
+- **skill_builder.py**: LLM-powered knowledge translator.
 - **calibrate.py**: Fusion engine for perception and cognition.
-- **heatmap.py**: Visualization tool for performance validation.
+- **visualize.py**: Gaze trajectory animator.
