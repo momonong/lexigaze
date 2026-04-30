@@ -25,6 +25,6 @@
 在擁有 GPU (例如 RTX 5090) 的環境下執行，速度最佳：
 
 ```bash
-python scripts/extract_cognitive_mass.py
+python scripts/geco/tasks/extract_cognitive_mass.py
 ```
 
