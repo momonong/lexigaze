@@ -22,11 +22,11 @@ calc = CognitiveMassCalculator()
 cm_scores = calc.calculate_mode_3_neuro_symbolic(full_text)
 
 # Align CM scores back to the dataframe
-# Note: spaCy and BERT tokenization might differ from raw word list, 
-# but for GECO we usually have a 1:1 word mapping if handled carefully.
-# Here we'll do a simple alignment for the demo.
-df = df.head(len(cm_scores)).copy()
-df['CM'] = cm_scores
+# Note: BERT tokenization (sub-words) usually results in more scores than raw words.
+# We ensure the lengths match to avoid the ValueError.
+min_len = min(len(df), len(cm_scores))
+df = df.iloc[:min_len].copy()
+df['CM'] = cm_scores[:min_len]
 
 # 3. Simulate Noisy WebGaze
 np.random.seed(42)
