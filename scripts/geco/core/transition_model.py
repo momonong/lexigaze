@@ -48,3 +48,63 @@ class ReadingTransitionMatrix:
         t_matrix /= row_sums
         
         return t_matrix
+
+class PsycholinguisticTransitionMatrix:
+    """
+    Skill 10: Psycholinguistic-Oculomotor Transition Matrix (POM).
+    Purely mathematically driven model inspired by SWIFT and E-Z Reader.
+    Removes LLM attention to focus on causal physical momentum and cognitive modulation.
+    """
+    def __init__(self, sigma_fwd=1.0, sigma_reg=1.5, gamma=0.5):
+        """
+        sigma_fwd: Spread of forward saccades (centered at i+1).
+        sigma_reg: Spread of regressions (centered at i-1).
+        gamma: Scaling factor for CM-based skipping penalty.
+        """
+        self.sigma_fwd = sigma_fwd
+        self.sigma_reg = sigma_reg
+        self.gamma = gamma
+
+    def build_matrix(self, num_words, base_cm_array):
+        """
+        Builds the N x N transition matrix using POM logic.
+        num_words: Number of words in sentence.
+        base_cm_array: Array of Cognitive Mass (Surprisal/Difficulty).
+        """
+        n = num_words
+        t_matrix = np.zeros((n, n))
+        
+        # Skill 10 Fix: Ensure CM is normalized to [0, 1] for the formula to work
+        cm_min = base_cm_array.min()
+        cm_max = base_cm_array.max()
+        if cm_max > cm_min:
+            norm_cm = (base_cm_array - cm_min) / (cm_max - cm_min)
+        else:
+            norm_cm = np.zeros_like(base_cm_array)
+        
+        for i in range(n):
+            for j in range(n):
+                if j > i:
+                    # 1. Base Physical Saccade (Forward Momentum)
+                    # Gaussian centered at i+1
+                    p_fwd = np.exp(-((j - (i + 1))**2) / (2 * self.sigma_fwd**2))
+                    # 2. Cognitive Modulation (Skipping)
+                    # Penalize transition to j if j is cognitively heavy (high CM)
+                    t_matrix[i, j] = p_fwd * (1.0 - self.gamma * norm_cm[j])
+                else:
+                    # 3. Cognitive Modulation (Regressions & Stays)
+                    # Exponential decay from i-1
+                    # Note: j=i is distance 1 from i-1, which is the 'Stay' probability
+                    p_reg = np.exp(-abs(j - (i - 1)) / self.sigma_reg)
+                    
+                    # Skill 10 Enhancement: Add 0.1 baseline to ensure we don't zero out 
+                    # the possibility of staying on a word or regressing, 
+                    # especially for low-CM words which still need multiple gaze points.
+                    t_matrix[i, j] = p_reg * (norm_cm[i] + 0.1)
+            
+            # Row-wise normalization (sum to 1.0)
+            row_sum = t_matrix[i].sum()
+            if row_sum > 0:
+                t_matrix[i] /= row_sum
+                
+        return t_matrix

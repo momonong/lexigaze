@@ -40,17 +40,19 @@ The following results represent our final unified metrics for Subject `pp01`, Tr
 | **Baseline** | Static Bayesian Snap | 16.7% | Point-based prior. |
 | **Advanced** | Kalman Filter (Smoothing) | 2.6% | Locks in systematic drift. |
 | **Breakthrough**| **Spatio-Temporal Viterbi (Base)**| **49.4%** | Sequence awareness. |
-| **Milestone** | **Viterbi + EM Auto-Calibration**| **48.1%** | Self-correcting drift. |
+| Milestone | **Viterbi + EM Auto-Calibration**| **50.0%** | Self-correcting drift. |
 | **Linguistic** | **STOCK-T v2 (Sparse Attention)**| **33.3%** | Captures cognitive look-backs. |
+| **Unified** | **STOCK-T v3 (Psycholinguistic POM)**| **46.2%** | Biologically causal reading prior. |
 
-*Note: While rule-based Viterbi is strongest for linear reading, STOCK-T provides the cognitive framework necessary for complex linguistic behaviors (regressions).*
+*Note: While rule-based Viterbi is strongest for linear reading, STOCK-T provides the cognitive framework necessary for complex linguistic behaviors (regressions). POM (v3) addresses the linear bias by removing diffuse attention.*
 
 ---
 
 ## 6. Repository Structure
-- `scripts/geco/core/`: Mathematical engines (`viterbi_decoder.py`, `attention_transition.py`).
+- `scripts/geco/core/`: Mathematical engines (`viterbi_decoder.py`, `transition_model.py`).
 - `scripts/geco/tasks/`: Production pipelines (`evaluate_pipeline.py`).
 - `docs/`: In-depth implementation logs and experiment reports.
+
 
 ---
 **Author**: LexiGaze Research Team  

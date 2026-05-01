@@ -83,3 +83,17 @@ This document records the step-by-step implementation of the LexiGaze Neuro-Symb
     - Sparsification of regression links ($j < i$).
 - **Results**: **33.3%**
 - **Analysis**: Captures linguistically motivated look-backs. While lower on fluent reading trials, it provides the architectural foundation for handling difficult texts and L2 learners where regressions are high-value signals.
+
+---
+
+## Phase 7: Biologically Driven Dynamics (Skill 10)
+
+### 10. Skill 10: Psycholinguistic-Oculomotor Transition (STOCK-T v3 / POM)
+- **Objective**: Pivot from diffuse LLM attention to a causal, mathematically driven biological transition model (POM).
+- **Implementation Date**: May 1, 2026
+- **Key Components**:
+    - `PsycholinguisticTransitionMatrix` in `scripts/geco/core/transition_model.py`.
+    - Gaussian forward momentum with CM-based skipping penalty.
+    - CM-boosted regressions with exponential decay.
+- **Results**: **46.2%**
+- **Analysis**: Effectively bridges the gap between raw physical sequence models (Viterbi) and diffuse linguistic models (STOCK-T v1/v2). By using causal physical priors modulated by cognitive mass, it addresses the linear bias of attention-based approaches while maintaining biological plausibility.

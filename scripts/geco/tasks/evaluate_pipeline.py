@@ -11,7 +11,7 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from scripts.geco.core.cm_algorithm import BayesianGravitySnap
-from scripts.geco.core.transition_model import ReadingTransitionMatrix
+from scripts.geco.core.transition_model import ReadingTransitionMatrix, PsycholinguisticTransitionMatrix
 from scripts.geco.core.viterbi_decoder import viterbi_gaze_decode
 from scripts.geco.core.baseline_decoders import NearestBoundingBoxDecoder, StandardKalmanDecoder, StaticBayesianDecoder
 from scripts.geco.core.em_calibration import AutoCalibratingDecoder
@@ -118,6 +118,17 @@ def run_evaluation():
     else:
         acc_h = 0
 
+    # --- Config I: STOCK-T v3 (Skill 10 - POM) ---
+    print("Running Config I: STOCK-T v3 (Psycholinguistic POM)...")
+    # Skill 10: Purely math-driven transition
+    pom_builder = PsycholinguisticTransitionMatrix(sigma_fwd=1.0, sigma_reg=1.5, gamma=0.5)
+    t_matrix_pom = pom_builder.build_matrix(len(df), base_cm)
+    
+    # Run with EM-Calibration for maximum accuracy
+    calibrator_pom = AutoCalibratingDecoder(calibration_window_size=30)
+    indices_i, drift_pom = calibrator_pom.calibrate_and_decode(gaze_sequence, word_boxes, base_cm, t_matrix_pom, sigma_gaze=[SIGMA_X, SIGMA_Y])
+    acc_i = evaluate_accuracy(true_words, [df.iloc[idx]['WORD'] for idx in indices_i])
+
     # 2. Results Summary
     results = {
         "Configuration": [
@@ -128,9 +139,10 @@ def run_evaluation():
             "Viterbi + OVP", 
             "Viterbi + EM-AutoCal",
             "STOCK-T v1",
-            "STOCK-T v2 (Final)"
+            "STOCK-T v2",
+            "STOCK-T v3 (POM)"
         ],
-        "Accuracy (%)": [acc_a, acc_b, acc_c, acc_d, acc_e, acc_f, acc_g, acc_h]
+        "Accuracy (%)": [acc_a, acc_b, acc_c, acc_d, acc_e, acc_f, acc_g, acc_h, acc_i]
     }
     res_df = pd.DataFrame(results)
     print("\n" + "="*50)
