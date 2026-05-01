@@ -17,13 +17,13 @@
 #### 2.1 認知質量 (CM)
 我們將單字 $i$ 的認知質量 ($CM_i$) 定義為其局部處理難度與全局結構重要性的乘積：
 $$CognitiveMass_i = Surprisal(w_i) \times AttentionCentrality(w_i)$$
-訊息增益 (Surprisal) 通過遮罩語言模型計算，而注意力中心性 (Attention Centrality) 則源自 Transformer 最後一層的平均自注意力權重。
+訊息增益 (Surprisal) 通過遮罩語言模型 ($-\log_2 P(w_i | context)$) 計算，而注意力中心性 (Attention Centrality) 則源自 Transformer 最後一層的平均自注意力權重。
 
 #### 2.2 心理語言學-動眼模型 (POM)
 我們從彌散的神經注意力轉向因果生物轉移矩陣。從單字 $i$ 移動到 $j$ 的概率 ($P(w_j | w_i)$) 由受跳讀閾值懲罰的前向動量和受當前處理難度 ($CM_i$) 增強的後向回視所組成。
 
 #### 2.3 多假設 EM 初始化
-為了克服「行鎖定」——即漂移導致系統吸附到錯誤的文字行——我們評估多個垂直偏移假設 $H = [0, \pm 行高]$。選擇使 Viterbi 路徑似然性最大化的假設來初始化細粒度的中位數漂移估計 ($\Delta x, \Delta y$)。
+為了克服「行鎖定」——即漂移導致系統吸附到錯誤的文字行——我們評估多個垂直偏移假設 $H = [0, \pm LineHeight]$。選擇使 Viterbi 路徑似然性最大化的假設來初始化細粒度的中位數漂移估計 ($\Delta x, \Delta y$)。
 
 ---
 
@@ -37,7 +37,7 @@ $$CognitiveMass_i = Surprisal(w_i) \times AttentionCentrality(w_i)$$
 | M1 | 基礎 Viterbi (基準) | 60.83% | 73.55% |
 | M2 | Viterbi + 多假設 EM | 74.90% | 92.15% |
 | **M4** | **STOCK-T (POM + EM)** | **90.49%** | **99.67%** |
-| M5 | 最終 STOCK-T (+ OVP) | 88.63% | 99.57% |
+| M5 | Ultimate STOCK-T (+ OVP) | 88.63% | 99.57% |
 
 #### 3.2 討論：OVP 異常現象
 有趣的是，雖然最佳觀察位置 (OVP) 對齊符合母語閱讀生理，但我們研究中的 L2 閱讀者在幾何中心模型（模型 4）下顯示出更高的嚴格準確率。這表明高認知負荷導致學習者更刻意地瞄準單字中心，而不是依賴高效的副中央凹預覽。
