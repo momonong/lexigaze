@@ -20,5 +20,5 @@ Format: `Time t | True Word: "apple" (idx: 5) | Predicted Word: "the" (idx: 4) |
 
 ## Output (@docs)
 * Run this script on the first 50-100 fixations of `pp01` Trial 5.
-* Save the output plot as an image to `docs/error_plots/trial5_analysis.png`.
+* Save the output plot as an image to `docs/figures/trial5_analysis.png`.
 * Generate a brief markdown report `2026-05-02_Error_Analysis.md` identifying any noticeable patterns in the failures (e.g., "Failing at line breaks", "Getting stuck on short words").

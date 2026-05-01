@@ -17,7 +17,7 @@ from scripts.geco.core.dynamic_field import DynamicCognitiveField
 
 # 1. Configuration
 DATA_PATH = "data/geco/geco_pp01_cognitive_mass.csv"
-OUTPUT_PLOT_PATH = "docs/error_plots/trial5_analysis.png"
+OUTPUT_PLOT_PATH = "docs/figures/trial5_analysis.png"
 
 # Optimal Params (Skill 11)
 SIGMA_FWD = 0.8

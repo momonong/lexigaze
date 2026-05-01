@@ -148,6 +148,19 @@ This document records the step-by-step implementation of the LexiGaze Neuro-Symb
 
 ---
 
+## Phase 14: Academic Synthesis (Skill 17)
+
+### 17. Skill 17: NeurIPS Paper Draft Architect
+- **Objective**: Synthesize all technical developments, ablation results, and diagnostic insights into a structured bilingual research paper.
+- **Implementation Date**: May 2, 2026
+- **Key Contributions**:
+    - Framed the "Line-Locking" problem as a fundamental limit of standard sequence decoders under extreme drift.
+    - Proposed the **STOCK-T** architecture (POM + Multi-Hypothesis EM) as the solution.
+    - Documented the "OVP Anomaly" in L2 readers, providing a novel psycholinguistic insight.
+- **Status**: Draft v1 complete, saved to `docs/neurips_draft_v1.md`. This marks the final milestone of the LexiGaze technical roadmap.
+
+---
+
 ## Phase 11: Initialization Intelligence (Skill 14)
 
 ### 14. Skill 14: Multi-Hypothesis EM Initialization (Fixing Line-Locking)
