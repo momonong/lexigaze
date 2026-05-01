@@ -93,7 +93,7 @@ def main():
     print("Running Config C: Base Viterbi (Rule-based, no OVP/EM)...")
     transition_builder = ReadingTransitionMatrix()
     t_matrix_c = transition_builder.build_matrix(base_cm, is_L2_reader=True)
-    indices_c = viterbi_gaze_decode(gaze_sequence, word_boxes, base_cm, t_matrix_c, sigma_gaze=[SIGMA_X, SIGMA_Y], use_ovp=False)
+    indices_c, _ = viterbi_gaze_decode(gaze_sequence, word_boxes, base_cm, t_matrix_c, sigma_gaze=[SIGMA_X, SIGMA_Y], use_ovp=False)
     strict_c, relaxed_c = evaluate_dual_accuracy(target_indices, indices_c)
 
     # --- Config D: Ultimate LexiGaze (Grid Search) ---

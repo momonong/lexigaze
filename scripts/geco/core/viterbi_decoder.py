@@ -78,13 +78,16 @@ def viterbi_gaze_decode(gaze_sequence, word_boxes, base_cm, transition_matrix, s
     best_path = []
     if np.all(viterbi[:, -1] == -np.inf):
         # Fallback if no path found (unlikely with enough noise margin)
-        return [np.argmax([multivariate_normal.pdf(g, mean=word_centers[np.argmin(np.sum((word_centers - g)**2, axis=1))], cov=cov) for g in gaze_sequence])]
+        # Returns a rough guess and a very low score
+        guess = [np.argmax([multivariate_normal.pdf(g, mean=word_centers[np.argmin(np.sum((word_centers - g)**2, axis=1))], cov=np.diag([sigma_gaze[0]**2, sigma_gaze[1]**2])) for g in gaze_sequence])] * num_steps
+        return guess, -np.inf
 
     last_state = np.argmax(viterbi[:, -1])
+    final_score = viterbi[last_state, -1]
     best_path.append(last_state)
     
     for t in range(num_steps - 1, 0, -1):
         last_state = backpointer[last_state, t]
         best_path.insert(0, last_state)
         
-    return best_path
+    return best_path, final_score

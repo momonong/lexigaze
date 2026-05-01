@@ -4,29 +4,50 @@ from .dynamic_field import DynamicCognitiveField
 
 class AutoCalibratingDecoder:
     """
-    Skill 6: EM-based Dynamic Drift Auto-Calibration.
+    Skill 6 & 14: EM-based Dynamic Drift Auto-Calibration with Multi-Hypothesis Initialization.
     Iteratively estimates systematic drift and re-decodes the sequence.
     """
-    def __init__(self, calibration_window_size=40):
+    def __init__(self, calibration_window_size=40, hypotheses=[0, 40, -40]):
         self.window_size = calibration_window_size
+        self.hypotheses = hypotheses # Skill 14: Vertical shift hypotheses to fix line-locking
 
     def calibrate_and_decode(self, raw_gaze_sequence, word_boxes, base_cm, transition_matrix, sigma_gaze=[40, 30], use_ovp=True):
-        # Step 1: E-Step (Expectation)
-        # Run Viterbi on an initial window to guess intended targets
+        # Step 1: E-Step (Expectation) with Skill 14 Multi-Hypothesis
         window = raw_gaze_sequence[:self.window_size]
-        initial_indices = viterbi_gaze_decode(window, word_boxes, base_cm, transition_matrix, sigma_gaze, use_ovp=use_ovp)
+        
+        best_initial_indices = None
+        best_likelihood = -np.inf
+        best_h = 0
+        
+        print(f"🔍 Skill 14: Evaluating {len(self.hypotheses)} drift hypotheses...")
+        
+        for h in self.hypotheses:
+            # Temporarily shift window by hypothesis h (vertical)
+            hyp_window = window.copy()
+            hyp_window[:, 1] += h
+            
+            indices, likelihood = viterbi_gaze_decode(hyp_window, word_boxes, base_cm, transition_matrix, sigma_gaze, use_ovp=use_ovp)
+            
+            if likelihood > best_likelihood:
+                best_likelihood = likelihood
+                best_initial_indices = indices
+                best_h = h
+        
+        print(f"✅ Skill 14: Best hypothesis h={best_h}px (Likelihood: {best_likelihood:.2f})")
         
         # Step 2: M-Step (Maximization / Drift Estimation)
-        # Skill 11 FIX: Access biologically aligned OVP centers for drift estimation
+        # Access biologically aligned OVP centers for drift estimation
         if use_ovp:
             dfield = DynamicCognitiveField(word_boxes, base_cm, use_ovp=True)
             word_centers = dfield.word_centers # OVP Centers (35% width)
         else:
             word_centers = np.array([[ (box[0] + box[2]) / 2, (box[1] + box[3]) / 2 ] for box in word_boxes])
             
-        predicted_centers = word_centers[initial_indices]
+        predicted_centers = word_centers[best_initial_indices]
         
-        # Calculate error vector
+        # Calculate error vector (Corrected by hypothesis h)
+        # Error = (RawGaze + h) - PredictedWordCenter
+        # Drift = Error - h = RawGaze - PredictedWordCenter
         errors = window - predicted_centers
         
         # Robust Mean Drift (Median)
@@ -42,6 +63,6 @@ class AutoCalibratingDecoder:
         
         # Step 3: Update & Final Decode
         corrected_gaze = raw_gaze_sequence - np.array([drift_x, drift_y])
-        final_indices = viterbi_gaze_decode(corrected_gaze, word_boxes, base_cm, transition_matrix, sigma_gaze, use_ovp=use_ovp)
+        final_indices, _ = viterbi_gaze_decode(corrected_gaze, word_boxes, base_cm, transition_matrix, sigma_gaze, use_ovp=use_ovp)
         
         return final_indices, (drift_x, drift_y)

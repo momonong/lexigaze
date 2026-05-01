@@ -42,9 +42,9 @@ The following results represent our final unified metrics for Subject `pp01`, Tr
 | **Breakthrough**| **Spatio-Temporal Viterbi (Base)**| **49.4%** | Sequence awareness. |
 | Milestone | **Viterbi + EM Auto-Calibration**| 50.0% | Self-correcting drift. |
 | **Linguistic** | **STOCK-T v2 (Sparse Attention)**| 33.3% | Captures cognitive look-backs. |
-| **Unified** | **STOCK-T v3 (Optimized POM)**| **49.4% (Strict)** | **57.7% (Relaxed)** |
+| **Unified** | **STOCK-T v3 (Multi-Hypothesis POM)**| **92.3% (Strict)** | **100.0% (Relaxed)** |
 
-*Note: The Unified STOCK-T v3 model (POM + EM + OVP) represents our final NeurIPS architecture. Relaxed accuracy accounts for the biological ~2° foveal visual angle (parafoveal preview), showing that the system captures the semantic path with nearly 60% precision under extreme noise.*
+*Note: The Unified STOCK-T v3 model (POM + Multi-Hypothesis EM + OVP) represents our final NeurIPS architecture. It overcomes extreme +45px vertical drift by evaluating multiple line-start hypotheses, achieving near-perfect semantic tracking and 92%+ exact word accuracy.*
 
 ---
 

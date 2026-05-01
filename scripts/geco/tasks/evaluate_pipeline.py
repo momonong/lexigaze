@@ -76,12 +76,12 @@ def run_evaluation():
     print("Running Config D: Spatio-Temporal Viterbi (No OVP)...")
     transition_builder = ReadingTransitionMatrix()
     t_matrix = transition_builder.build_matrix(base_cm, is_L2_reader=True)
-    indices_d = viterbi_gaze_decode(gaze_sequence, word_boxes, base_cm, t_matrix, sigma_gaze=[SIGMA_X, SIGMA_Y], use_ovp=False)
+    indices_d, _ = viterbi_gaze_decode(gaze_sequence, word_boxes, base_cm, t_matrix, sigma_gaze=[SIGMA_X, SIGMA_Y], use_ovp=False)
     acc_d = evaluate_accuracy(true_words, [df.iloc[idx]['WORD'] for idx in indices_d])
 
     # --- Config E: Viterbi + OVP (Skill 7) ---
     print("Running Config E: Viterbi + OVP Optimization...")
-    indices_e = viterbi_gaze_decode(gaze_sequence, word_boxes, base_cm, t_matrix, sigma_gaze=[SIGMA_X, SIGMA_Y], use_ovp=True)
+    indices_e, _ = viterbi_gaze_decode(gaze_sequence, word_boxes, base_cm, t_matrix, sigma_gaze=[SIGMA_X, SIGMA_Y], use_ovp=True)
     acc_e = evaluate_accuracy(true_words, [df.iloc[idx]['WORD'] for idx in indices_e])
 
     # --- Config F: Viterbi + EM Auto-Calibration (Skill 6) ---
@@ -98,7 +98,7 @@ def run_evaluation():
         stock_t_v1_builder = AttentionGuidedMatrix(mu_saccade=1.0)
         # Manually mimic v1 behavior by passing None for base_cm to trigger fallback alpha
         t_matrix_v1 = stock_t_v1_builder.build_matrix(len(df), attn_matrix)
-        indices_g = viterbi_gaze_decode(gaze_sequence, word_boxes, base_cm, t_matrix_v1, sigma_gaze=[SIGMA_X, SIGMA_Y])
+        indices_g, _ = viterbi_gaze_decode(gaze_sequence, word_boxes, base_cm, t_matrix_v1, sigma_gaze=[SIGMA_X, SIGMA_Y])
         acc_g = evaluate_accuracy(true_words, [df.iloc[idx]['WORD'] for idx in indices_g])
     else:
         acc_g = 0
@@ -113,7 +113,7 @@ def run_evaluation():
         # Verify matrix
         print_sample_matrix(t_matrix_v2, n=8)
         
-        indices_h = viterbi_gaze_decode(gaze_sequence, word_boxes, base_cm, t_matrix_v2, sigma_gaze=[SIGMA_X, SIGMA_Y])
+        indices_h, _ = viterbi_gaze_decode(gaze_sequence, word_boxes, base_cm, t_matrix_v2, sigma_gaze=[SIGMA_X, SIGMA_Y])
         acc_h = evaluate_accuracy(true_words, [df.iloc[idx]['WORD'] for idx in indices_h])
     else:
         acc_h = 0
