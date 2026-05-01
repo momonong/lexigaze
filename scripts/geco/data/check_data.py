@@ -1,8 +1,7 @@
 import pandas as pd
 
 # 讀取 Excel 檔案
-file_path = "data\geco\L2ReadingData.xlsx" 
-
+file_path = "data/geco/L2ReadingData.xlsx"
 print("⏳ 正在從 Excel 載入 GECO L2 資料集...")
 # read_excel 會自動使用 openpyxl 引擎
 df = pd.read_excel(file_path)

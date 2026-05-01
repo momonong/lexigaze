@@ -1,8 +1,8 @@
 import pandas as pd
 
 # 原始檔案與輸出檔案路徑
-input_file = "data\geco\L2ReadingData.xlsx"
-output_file = "data\geco\geco_pp01_trial5_clean.csv"
+input_file = "data/geco/L2ReadingData.xlsx"
+output_file = "data/geco/geco_pp01_trial5_clean.csv"
 
 print("⏳ 正在讀取原始 Excel 資料 (這可能需要一兩分鐘)...")
 df = pd.read_excel(input_file)

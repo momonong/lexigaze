@@ -213,3 +213,5 @@ models/
 *.h5
 
 .DS_Store
+/xet
+/hub
