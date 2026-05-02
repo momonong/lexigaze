@@ -203,3 +203,18 @@ This document records the step-by-step implementation of the LexiGaze Neuro-Symb
     - **STOCK-T (POM + EM)**: **94.2% Strict / 100% Relaxed**.
 - **Crucial Insight**: Activation of the **POM transition matrix** is the "Enabler" for hardware calibration. Rule-based models lack the discriminatory power to select the correct vertical hypothesis under extreme drift. This validates the **Neuro-Symbolic** core of the project.
 - **Status**: Ablation study complete, results saved to `docs/2026-05-02_NeurIPS_Ablation_Study.md`.
+
+---
+
+## Phase 15: Statistical Foundation (Skill 20)
+
+### 20. Skill 20: L1 vs. L2 Dataset Descriptive Statistics & EDA
+- **Objective**: statistically demonstrate behavioral differences between Native (L1) and Bilingual (L2) readers to justify STOCK-T architectural choices.
+- **Implementation Date**: May 2, 2026
+- **Key Findings**:
+    - **L2 Slowdown**: Bilingual readers exhibit 23.1% longer fixation durations (354.3ms vs 287.8ms).
+    - **Reduced Jumps**: L2 readers take 26.3% smaller saccades compared to native readers.
+    - **Higher Regressions**: L2 readers move backward more frequently (32.5% vs 30.7%).
+- **Justification**: These findings empirically support the use of Cognitive Mass (CM) to handle increased load and the Psycholinguistic-Oculomotor Model (POM) to handle non-linear gaze dynamics in L2 learners.
+- **Status**: EDA Complete, results saved in `docs/experiments/2026-05-02_Dataset_Statistics.md`.
+

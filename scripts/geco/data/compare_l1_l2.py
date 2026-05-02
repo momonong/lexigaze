@@ -13,10 +13,10 @@ def inspect_geco_data(file_path, name):
         print(f"Sheet names: {xl.sheet_names}")
         
         # Get some basic info from the first sheet
-        df_full = pd.read_excel(file_path, usecols=['PP_NR', 'TRIAL_ID', 'WORD_ID', 'WORD_SKIP'])
+        df_full = pd.read_excel(file_path, usecols=['PP_NR', 'TRIAL', 'WORD_ID', 'WORD_SKIP'])
         print(f"Number of rows: {len(df_full)}")
         print(f"Unique Subjects: {df_full['PP_NR'].nunique()}")
-        print(f"Average Words per Trial: {df_full.groupby(['PP_NR', 'TRIAL_ID'])['WORD_ID'].count().mean():.2f}")
+        print(f"Average Words per Trial: {df_full.groupby(['PP_NR', 'TRIAL'])['WORD_ID'].count().mean():.2f}")
         print(f"Global Skip Rate: {df_full['WORD_SKIP'].mean():.2%}")
         
     except Exception as e:
