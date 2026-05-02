@@ -1,0 +1,137 @@
+\documentclass{article}
+
+% Pre-submission track options for neurips_2026.sty
+\usepackage[final]{neurips_2026}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{hyperref}
+\usepackage{url}
+\usepackage{booktabs}
+\usepackage{amsfonts}
+\usepackage{nicefrac}
+\usepackage{microtype}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{graphicx}
+
+\title{LexiGaze: Overcoming Extreme Hardware Drift in Edge Eye-Tracking via Neuro-Symbolic Cognitive Modeling}
+
+\author{%
+  LexiGaze Research Team \\
+  Department of Computer Science \\
+  Edge AI Laboratory \\
+  \texttt{research@lexigaze.ai} \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Webcam-based eye-tracking on consumer edge devices suffers from high noise and systematic hardware drift, often exceeding 45 pixels. Traditional signal processing methods fail to recover intended gaze paths under such extreme offsets. We propose LexiGaze, a neuro-symbolic framework that fuses neural gaze perception with symbolic linguistic priors. Our system utilizes a Psycholinguistic-Oculomotor Model (POM) and a Multi-Hypothesis Expectation-Maximization (EM) initialization to solve the ``Line-Locking'' failure mode. Across the full Ghent Eye-Tracking Corpus (GECO) dataset of 37 subjects, LexiGaze achieves an average strict word-level accuracy of 86.4\% for bilingual learners and 98.6\% for native readers, with a semantic path recovery rate of 99.6\%. We also document a novel ``OVP Anomaly,'' where high cognitive load in second-language learners correlates with a preference for geometric word centers over biological Optimal Viewing Positions (OVP).
+\end{abstract}
+
+\section{Introduction}
+
+Eye-tracking is a powerful diagnostic tool for cognitive load and language learning \cite{cop2017geco}. However, high-fidelity tracking typically requires expensive infrared hardware, limiting its accessibility in edge computing scenarios. Commodity webcams introduce systematic vertical drift due to head tilt and low sensor resolution, making word-level calibration nearly impossible under traditional models.
+
+LexiGaze addresses this challenge by treating the reader's intent as a hidden state in a Spatio-Temporal Oculomotor-Cognitive Kalman Transformer (STOCK-T). By leveraging the predictable rhythm of reading and linguistic constraints, the system can self-correct hardware errors in real-time \cite{urquiza2026robust}.
+
+\section{Methodology}
+
+\subsection{Cognitive Mass (CM)}
+
+We define Cognitive Mass ($CM_i$) for word $i$ as the product of its localized processing difficulty, derived from surprisal $S(w_i)$, and its global structural importance, derived from attention centrality $A(w_i)$ \cite{smith2023surprisal, vaswani2017attention}:
+
+\begin{equation}
+CM_i = S(w_i) \times A(w_i)
+\end{equation}
+
+Surprisal is calculated via a Masked Language Model ($-\log_2 P(w_i | \text{context})$), while Attention Centrality is derived from the mean self-attention weights in the Transformer's final layer. CM acts as a ``gravity'' prior in our Bayesian emission model, pulling noisy gaze points toward cognitively heavy anchors.
+
+\subsection{Psycholinguistic-Oculomotor Model (POM)}
+
+We pivot from diffuse neural attention to a causal biological transition matrix inspired by the SWIFT and E-Z Reader frameworks \cite{engbert2005swift, reichle1998ez}. The transition probability $P(w_t | w_{t-1}, CM)$ is modeled by:
+
+\begin{equation}
+P(w_t | w_{t-1}, CM) \propto P_{\text{phys}}(w_t | w_{t-1}) \times \text{Modulation}(CM)
+\end{equation}
+
+where $P_{\text{phys}}$ represents the mechanical forward momentum of reading, and the modulation term handles word skipping (penalized by target $CM$) and regressions (boosted by current word difficulty).
+
+\subsection{Multi-Hypothesis EM Initialization}
+
+To overcome ``Line-Locking''—where drift causes the system to snap to the wrong text line—we evaluate multiple vertical shift hypotheses $H = [0, \pm \text{LineHeight}]$. The hypothesis maximizing the Viterbi path likelihood is selected to initialize the fine-grained median drift estimation $(\Delta x, \Delta y)$:
+
+\begin{equation}
+(\Delta x, \Delta y) = \text{Median}_{1..K} (\text{Gaze}_t - \text{WordCenter}_t)
+\end{equation}
+
+This corrected vector is then applied to the entire gaze stream to recover the true reading path.
+
+\section{Experimental Results}
+
+\subsection{Population-Level Performance}
+
+We evaluated LexiGaze across the entire GECO corpus, comprising 18 native (L1) and 19 bilingual (L2) subjects \cite{cop2017geco, nahatame2021geco}. As shown in Table \ref{tab:population}, the STOCK-T architecture achieves near-perfect semantic recovery even under 45px drift.
+
+\begin{table}[h]
+\caption{Population-Level Performance (GECO Full Corpus)}
+\label{tab:population}
+\centering
+\begin{tabular}{lccc}
+\toprule
+\textbf{Group} & \textbf{Mean Center Acc} & \textbf{Mean OVP Acc} & \textbf{Semantic Recovery} \\ 
+\midrule
+L1 (Native Dutch) & 98.61\% & 98.67\% & 100.00\% \\
+L2 (Bilingual English) & 86.45\% & 83.69\% & 99.67\% \\ 
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Noise Robustness Stress Test}
+
+We simulated increasing levels of systematic vertical drift to identify the breakdown point of the algorithm. Table \ref{tab:stress} demonstrates that STOCK-T maintains high stability even at drifts that render baseline methods useless.
+
+\begin{table}[h]
+\caption{Noise Robustness Stress Test (Subject pp01)}
+\label{tab:stress}
+\centering
+\begin{tabular}{cccc}
+\toprule
+\textbf{Drift (px)} & \textbf{Baseline} & \textbf{EM Only} & \textbf{STOCK-T (Ours)} \\ 
+\midrule
+0 & 32.34\% & 81.54\% & 90.49\% \\
+30 & 24.58\% & 70.46\% & 90.49\% \\
+45 & 19.10\% & 74.90\% & 90.49\% \\
+60 & 13.42\% & 60.59\% & 82.50\% \\
+75 & 8.50\% & 54.86\% & 51.95\% \\ 
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Discussion: The OVP Anomaly}
+
+Our analysis revealed a significant ``OVP Anomaly'' in second-language learners. While native readers benefit from biological OVP alignment (shifted 35\% from word start), bilingual readers show a +2.75\% accuracy gain when the system targets the geometric word center. This suggests that high cognitive load leads to more deliberate targeting strategies.
+
+\subsection{Ethical Implications}
+
+Edge-based eye-tracking enables privacy-preserving cognitive monitoring by keeping data on-device. However, the ability to infer linguistic proficiency or cognitive load through webcam data raises concerns regarding workplace surveillance and educational bias. We advocate for transparent disclosure and user-controlled data silos in all LexiGaze deployments.
+
+\subsection{Future Work: Neuromorphic Integration}
+
+Future iterations of LexiGaze will explore integration with Akida neuromorphic hardware. The event-based nature of gaze data is a natural fit for spiking neural networks, potentially reducing latency and power consumption for real-time edge calibration.
+
+\section{Conclusion}
+
+LexiGaze demonstrates that neuro-symbolic modeling can transform low-cost hardware into a precision diagnostic tool. By solving the line-locking problem via multi-hypothesis reasoning and leveraging causal psycholinguistic priors, we achieved robust single-word accuracy across diverse cohorts.
+
+\begin{ack}
+This research was supported by the LexiGaze AI Orchestrator initiative. We thank the GECO team for providing the foundational eye-tracking data.
+\end{ack}
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

@@ -220,16 +220,19 @@ This document records the step-by-step implementation of the LexiGaze Neuro-Symb
 
 ---
 
-## Phase 17: Project Culmination (Skill 22)
+## Phase 18: Manuscript Engineering (Skill 23)
 
-### 22. Skill 22: Comprehensive NeurIPS Synthesis
-- **Objective**: Perform a global synthesis of all findings, technical logs, and population-level statistics to produce the final research manuscript.
+### 23. Skill 23: NeurIPS LaTeX Manuscript Generator
+- **Objective**: Transform research findings into a professional LaTeX document using the NeurIPS 2026 template.
 - **Implementation Date**: May 2, 2026
 - **Key Outputs**:
-    - `docs/NeurIPS/manuscript_v2_en.md`: Full 8-page English research paper.
-    - `docs/NeurIPS/manuscript_v2_ch.md`: Traditional Chinese version for review.
-    - `docs/NeurIPS/latex_refs.md`: LaTeX helper file with formalized equations and result tables.
-- **Final Result**: LexiGaze achieves 86.4% L2 accuracy and near-perfect semantic recovery (99.6%) under extreme hardware drift (+45px), documented across 37 subjects and 370 trials.
-- **Status**: Project Complete. Manuscript submitted for advisor review.
+    - `docs/NeurIPS/main.tex`: Full LaTeX source with formalized methodology and result tables.
+    - `docs/NeurIPS/references.bib`: BibTeX file with key oculomotor and NLP references.
+    - `docs/NeurIPS/neurips_2026.sty`: Placeholder style file to enable local compilation.
+- **Content Highlights**:
+    - Formalized **Cognitive Mass** and **POM Transition** equations.
+    - Integrated **Population-Level Results** (86.4% L2 Accuracy).
+    - Expanded discussion on **Ethical Implications** and **Neuromorphic Integration**.
+- **Status**: Manuscript Drafted. Ready for final refinement and submission.
 
 
