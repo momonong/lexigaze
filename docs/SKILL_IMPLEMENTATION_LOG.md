@@ -206,15 +206,30 @@ This document records the step-by-step implementation of the LexiGaze Neuro-Symb
 
 ---
 
-## Phase 15: Statistical Foundation (Skill 20)
+## Phase 16: Corpus-Scale Validation (Skill 21)
 
-### 20. Skill 20: L1 vs. L2 Dataset Descriptive Statistics & EDA
-- **Objective**: statistically demonstrate behavioral differences between Native (L1) and Bilingual (L2) readers to justify STOCK-T architectural choices.
+### 21. Skill 21: Full-Corpus OVP & Proficiency Analysis
+- **Objective**: solidifying the "OVP Anomaly" across all subjects in GECO to establish correlation between proficiency and gaze targeting preference.
 - **Implementation Date**: May 2, 2026
-- **Key Findings**:
-    - **L2 Slowdown**: Bilingual readers exhibit 23.1% longer fixation durations (354.3ms vs 287.8ms).
-    - **Reduced Jumps**: L2 readers take 26.3% smaller saccades compared to native readers.
-    - **Higher Regressions**: L2 readers move backward more frequently (32.5% vs 30.7%).
-- **Justification**: These findings empirically support the use of Cognitive Mass (CM) to handle increased load and the Psycholinguistic-Oculomotor Model (POM) to handle non-linear gaze dynamics in L2 learners.
-- **Status**: EDA Complete, results saved in `docs/experiments/2026-05-02_Dataset_Statistics.md`.
+- **Key Components**:
+    - `evaluate_full_corpus.py`: Iterates over 37 subjects (L1 and L2).
+    - Proficiency Proxy: Global Average Fixation Duration.
+    - Delta Accuracy: $Accuracy_{Center} - Accuracy_{OVP}$.
+- **Findings**: confirmed a positive correlation between fixation duration (lower proficiency) and preference for geometric centers. L2 readers benefit significantly more from center-snapping (+2.5% Delta) compared to native readers.
+- **Status**: Analysis Complete, report and correlation plot generated.
+
+---
+
+## Phase 17: Project Culmination (Skill 22)
+
+### 22. Skill 22: Comprehensive NeurIPS Synthesis
+- **Objective**: Perform a global synthesis of all findings, technical logs, and population-level statistics to produce the final research manuscript.
+- **Implementation Date**: May 2, 2026
+- **Key Outputs**:
+    - `docs/NeurIPS/manuscript_v2_en.md`: Full 8-page English research paper.
+    - `docs/NeurIPS/manuscript_v2_ch.md`: Traditional Chinese version for review.
+    - `docs/NeurIPS/latex_refs.md`: LaTeX helper file with formalized equations and result tables.
+- **Final Result**: LexiGaze achieves 86.4% L2 accuracy and near-perfect semantic recovery (99.6%) under extreme hardware drift (+45px), documented across 37 subjects and 370 trials.
+- **Status**: Project Complete. Manuscript submitted for advisor review.
+
 
