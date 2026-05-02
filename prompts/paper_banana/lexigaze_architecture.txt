@@ -1,0 +1,28 @@
+Title: The STOCK-T Architecture (Spatio-Temporal Oculomotor-Cognitive Kalman Transformer)
+
+A comprehensive Neuro-Symbolic architecture for robust eye-tracking on edge devices.
+
+1. Input Layer: A dual-input stream consisting of a Noisy Webcam Gaze Stream (time-series of x,y coordinates with jitter and drift) and the Target Text Context.
+
+2. Linguistic Feature Extraction (BERT): A transformer-based module within STOCK-T that processes the Target Text to compute word-level features. It outputs 'Surprisal' (via Masked Language Modeling) and 'Attention Centrality' (via mean self-attention weights). These are multiplied to produce 'Cognitive Mass' (CM) for each word.
+
+3. Psycholinguistic-Oculomotor Model (POM): The STOCK-T transition matrix generator that receives CM values. It models three causal components: 
+    - Forward Momentum: Gaussian saccadic priors toward word (i+1).
+    - Skipping Penalty: Forward transitions are modulated by the CM of target words.
+    - Regression Boost: Backward transitions (i -> j, where j < i) are boosted by the CM of the current word.
+
+4. Neural Perception Likelihood: A module in the STOCK-T pipeline that maps the Gaze Stream to word bounding boxes. It uses a 2D Gaussian likelihood model P(G|W) and incorporates 'Optimal Viewing Position' (OVP) offsets, shifting the word centers to 35% of their width to align with biological foveation.
+
+5. Multi-Hypothesis EM Initialization: The STOCK-T diagnostic probing block that evaluates three vertical drift hypotheses (H = [0, +LineHeight, -LineHeight]). It runs a preliminary Viterbi pass for each hypothesis and selects the one with the maximum global likelihood to initialize the fine-grained drift correction.
+
+6. Spatio-Temporal Viterbi Decoder: The STOCK-T core fusion engine that performs sequence decoding over the hidden states (words). It integrates the POM Transition Matrix and the Neural Perception Likelihoods to find the optimal global reading path.
+
+7. Output: The system outputs a 'Decoded Semantic Path' (the sequence of words the user actually read) and 'Calibrated Gaze Coordinates' where the systematic drift has been removed. 
+
+Visualization Instructions:
+- Use a clean, academic, block-diagram style.
+- Show the flow from Text to BERT to CM, and then from CM into both the POM Transition Matrix and the Neural Perception Likelihood.
+- Show the Gaze Stream entering the Neural Perception Likelihood.
+- Place the Multi-Hypothesis EM block as an initialization loop that influences the Viterbi Decoder.
+- Labeled arrows should indicate 'Linguistic Priors', 'Saccadic Momentum', and 'Likelihood Mapping'.
+- Ensure the main title "The STOCK-T Architecture" is prominently displayed at the top.

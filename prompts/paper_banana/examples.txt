@@ -1,0 +1,7 @@
+1. A transformer encoder-decoder architecture. The encoder has 6 layers of multi-head self-attention and feed-forward networks processing input embeddings. The decoder generates tokens auto-regressively with masked self-attention and cross-attention to encoder outputs. Show residual connections and layer normalization at each sub-layer.
+
+2. A Generative Adversarial Network training pipeline. The Generator takes random noise z and produces fake images. The Discriminator receives both real images from the dataset and fake images from the Generator, outputting real/fake probability. Show the adversarial loss flowing back to both networks with labeled arrows.
+
+3. A Retrieval-Augmented Generation system pipeline. User query enters the system, gets embedded by an encoder, then retrieves top-k relevant documents from a vector database. The retrieved context and original query are combined into an augmented prompt fed to the LLM, which generates the final response.
+
+4. A multi-agent collaboration framework with 4 agents: Planner, Retriever, Executor, and Critic. The Planner decomposes tasks and coordinates other agents. The Retriever fetches relevant knowledge. The Executor performs actions. The Critic evaluates outputs and provides feedback in a closed loop.
