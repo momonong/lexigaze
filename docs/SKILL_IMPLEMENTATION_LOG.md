@@ -235,4 +235,22 @@ This document records the step-by-step implementation of the LexiGaze Neuro-Symb
     - Expanded discussion on **Ethical Implications** and **Neuromorphic Integration**.
 - **Status**: Manuscript Drafted. Ready for final refinement and submission.
 
+---
+
+## Phase 19: Publication Visualization (Skill 24)
+
+### 24. Skill 24: NeurIPS Publication-Ready Visualizations
+- **Objective**: Generate high-quality, NeurIPS-compliant vector graphics (.pdf) and raster graphics (.png) for the research manuscript.
+- **Implementation Date**: May 3, 2026
+- **Key Components**:
+    - `scripts/geco/generate_neurips_figures.py`: Centralized visualization script using NeurIPS-standard typography (Times New Roman, 10pt) and high-DPI settings.
+    - Standardized PDF embedding (fonttype 42) for LaTeX compatibility.
+- **Generated Figures**:
+    1. **Noise Robustness Stress Test**: Demonstrates STOCK-T's stability vs. baselines from 0px to 75px drift.
+    2. **OVP Anomaly vs. Proficiency**: Scatter plot with trendline showing the correlation between cognitive load and center-targeting preference.
+    3. **Population-Level Performance**: Bar chart comparing Center vs. OVP accuracy across L1 and L2 groups.
+    4. **Dataset Gaze Kinematics**: Comparative EDA of fixation duration, skipping, regressions, and saccade amplitude.
+- **Status**: Visualizations generated and saved to `docs/NeurIPS/figures/`.
+
+
 
