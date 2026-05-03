@@ -125,101 +125,93 @@ def plot_robustness():
     ax.set_ylim(0, 105)
     ax.grid(True, linestyle=':', alpha=0.4)
     ax.axvline(45, color='gray', linestyle=':', label='GECO Noise floor')
-    # Changed to 2x2 legend (ncol=2) with background to avoid overlap
+    # Preserved Lower Left legend as requested by user
     ax.legend(loc='lower left', ncol=2, frameon=True, facecolor='white', framealpha=0.9)
     sns.despine()
     save_fig('fig3_robustness')
 
-# --- Fig 4: Qualitative Scanpath Recovery (Real Data) ---
+# --- Fig 4: Qualitative Scanpath Recovery (Masterpiece - Decoupled Architecture) ---
 def plot_scanpath_final():
-    # 1. Load Data
-    cm_path = "data/geco/geco_pp01_cognitive_mass.csv"
-    clean_path = "data/geco/geco_pp01_trial5_clean.csv"
-    if not os.path.exists(cm_path): return
+    # 1. Extract REAL Coordinates
+    csv_path = "data/geco/geco_pp01_bayesian_results.csv"
+    if not os.path.exists(csv_path): return
+    df_traj = pd.read_csv(csv_path).iloc[:6].copy()
     
-    df_cm = pd.read_csv(cm_path)
-    df_clean = pd.read_csv(clean_path)
-    df = pd.merge(df_cm, df_clean[['WORD_ID', 'WORD_TOTAL_READING_TIME']], on='WORD_ID')
+    # 2. Dynamic Text Placement (Real X, Clean Y)
+    clean_y = df_traj['true_y'].median()
     
-    # Focus on first two lines (~22 words)
-    LIMIT = 22
-    df_seg = df.iloc[:LIMIT].copy()
+    words = df_traj['WORD'].values
+    real_x = df_traj['true_x'].values
+    durations = df_traj['WORD_TOTAL_READING_TIME'].values
     
-    # Estimate boxes
-    char_w = 7.0
-    df_seg['w'] = df_seg['WORD'].str.strip().str.len() * char_w + 12
-    df_seg['h'] = 28
-    df_seg['x_min'] = df_seg['true_x'] - df_seg['w'] / 2
-    df_seg['y_min'] = df_seg['true_y'] - df_seg['h'] / 2
+    raw_x = df_traj['webcam_x'].values
+    raw_y = df_traj['webcam_y'].values
+    corrected_x = df_traj['calibrated_x'].values
+    corrected_y = df_traj['calibrated_y'].values
     
-    word_boxes = df_seg[['x_min', 'y_min', 'true_x', 'true_y']].copy() # Just for reference
-    # Actual word_boxes for algorithm
-    wb = [[r['x_min'], r['y_min'], r['x_min']+r['w'], r['y_min']+r['h']] for _, r in df_seg.iterrows()]
+    # 4. Professional Rendering
+    fig, ax = plt.subplots(figsize=(8, 3.5))
     
-    # 2. Simulate Noise
-    np.random.seed(42)
-    drift_y = 45.0
-    rx = df_seg['true_x'] + np.random.normal(0, 20, len(df_seg))
-    ry = df_seg['true_y'] + np.random.normal(0, 12, len(df_seg)) + drift_y
-    gaze_seq = np.stack([rx, ry], axis=1)
+    # Pad limits based on real data
+    all_x = np.concatenate([real_x, raw_x, corrected_x])
+    all_y = np.concatenate([[clean_y], raw_y, corrected_y])
+    ax.set_xlim(np.min(all_x) - 50, np.max(all_x) + 50)
+    ax.set_ylim(np.min(all_y) - 50, np.max(all_y) + 50)
     
-    # 3. Run Algorithm
-    pom = PsycholinguisticTransitionMatrix(sigma_fwd=0.8, sigma_reg=1.5, gamma=0.3)
-    tm = pom.build_matrix(len(df_seg), df_seg['cognitive_mass'].values)
-    calibrator = AutoCalibratingDecoder(calibration_window_size=15)
-    _, dv = calibrator.calibrate_and_decode(gaze_seq, wb, df_seg['cognitive_mass'].values, tm, use_ovp=True)
-    
-    corrected = gaze_seq - np.array(dv)
-    cx, cy = corrected[:, 0], corrected[:, 1]
-    
-    # 4. Plot
-    # Increased height from 3.8 to 4.2 to fit the title and legend comfortably
-    fig, ax = plt.subplots(figsize=(8, 4.2))
-    ax.invert_yaxis()
+    # NO axes or spines
     ax.set_xticks([]); ax.set_yticks([])
     for s in ax.spines.values(): s.set_visible(False)
     
-    # Professional Title for NeurIPS standards
-    ax.set_title('Qualitative Scanpath Recovery & Line-Locking Correction', pad=30, fontsize=12, fontweight='bold')
-    
-    # Background Stimulus
-    cm_thresh = np.percentile(df_seg['cognitive_mass'], 75)
-    for _, r in df_seg.iterrows():
-        if r['cognitive_mass'] >= cm_thresh:
-            ax.add_patch(patches.Rectangle((r['x_min']-2, r['y_min']-2), r['w']+4, r['h']+4, 
-                                           facecolor="#FF8C00", alpha=0.1, zorder=1))
-        ax.add_patch(patches.Rectangle((r['x_min'], r['y_min']), r['w'], r['h'], 
-                                       lw=0.8, ec='lightgray', fc='none', ls='--', alpha=0.8, zorder=1))
-        ax.text(r['true_x'], r['true_y'], r['WORD'].strip(), ha='center', va='center', fontsize=10, zorder=1)
+    # Draw Background Stimulus (Z-order 1)
+    for txt, x in zip(words, real_x):
+        txt_str = str(txt).strip()
+        w_width = len(txt_str) * 7.5 + 15
         
-    # Raw Gaze
-    ax.plot(rx, ry, color="#E63946", ls='--', alpha=0.4, lw=1, zorder=2, label="Raw Gaze (Hardware Drift)")
-    ax.scatter(rx, ry, color="#E63946", marker='x', s=20, alpha=0.5, zorder=2)
+        # Subtle Highlight for keywords
+        is_heavy = txt_str in ["stupefied", "silence.", "cried,"]
+        fc = "#FF8C00" if is_heavy else "white"
+        alpha_val = 0.2 if is_heavy else 1.0
+        
+        ax.add_patch(patches.Rectangle((x - w_width/2, clean_y - 16), w_width, 32, 
+                                       lw=0.7, ec='lightgray', fc=fc, ls='--', alpha=alpha_val, zorder=1))
+        ax.text(x, clean_y, txt_str, ha='center', va='center', fontsize=11, family='serif', zorder=1)
+
+    # 3. Plot the REAL Trajectories
+    # Raw Gaze (Z-order 2)
+    ax.plot(raw_x, raw_y, color="#E63946", ls='--', alpha=0.35, lw=1.2, zorder=2, label="Raw Gaze (Hardware Drift)")
+    ax.scatter(raw_x, raw_y, color="#E63946", marker='x', s=35, alpha=0.5, zorder=2)
     
-    # Gravity Arcs
-    for i in range(len(df_seg)):
-        ax.annotate("", xy=(cx[i], cy[i]), xytext=(rx[i], ry[i]),
-                    arrowprops=dict(arrowstyle="->", color="gray", ls=":", shrinkA=3, shrinkB=3, alpha=0.4,
+    # Corrected Gaze (Z-order 4)
+    ax.plot(corrected_x, corrected_y, color="#2A9D8F", lw=2.5, alpha=0.9, zorder=4, label="STOCK-T Corrected")
+    # Marker sizes scaled by real GECO durations
+    sizes = (durations / np.max(durations)) * 200 + 40
+    ax.scatter(corrected_x, corrected_y, color="#2A9D8F", s=sizes, marker='o', ec='white', lw=0.6, alpha=0.95, zorder=4)
+
+    # Semantic Gravity Arcs (Z-order 3)
+    for i in range(len(real_x)):
+        ax.annotate("", xy=(corrected_x[i], corrected_y[i]), xytext=(raw_x[i], raw_y[i]),
+                    arrowprops=dict(arrowstyle="->", color="gray", linestyle=":", 
+                                    shrinkA=2, shrinkB=2, alpha=0.5,
                                     connectionstyle="arc3,rad=-0.2"), zorder=3)
     ax.plot([], [], color="gray", ls=":", label="Semantic Gravity Arc", zorder=3)
     
-    # Corrected Gaze
-    ax.plot(cx, cy, color="#2A9D8F", lw=2, alpha=0.9, zorder=4, label="STOCK-T Corrected")
-    sizes = (df_seg['WORD_TOTAL_READING_TIME'] / df_seg['WORD_TOTAL_READING_TIME'].max()) * 150 + 20
-    ax.scatter(cx, cy, color="#2A9D8F", s=sizes, marker='o', ec='white', lw=0.5, alpha=0.9, zorder=4)
-    
-    # Directional Arrows
-    for i in range(len(cx)-1):
-        ax.annotate("", xy=(cx[i+1], cy[i+1]), xytext=(cx[i], cy[i]),
-                    arrowprops=dict(arrowstyle="-|>", color="#2A9D8F", lw=0, alpha=0.4, shrinkA=12, shrinkB=12),
+    # Directional Flow on corrected trajectory
+    for i in range(len(corrected_x)-1):
+        ax.annotate("", xy=(corrected_x[i+1], corrected_y[i+1]), xytext=(corrected_x[i], corrected_y[i]),
+                    arrowprops=dict(arrowstyle="-|>", color="#2A9D8F", lw=0, alpha=0.5, shrinkA=18, shrinkB=18),
                     zorder=4)
 
-    # Moved legend to bottom center to keep the top clear for the professional title
-    ax.legend(bbox_to_anchor=(0.5, -0.1), loc='upper center', ncol=4, frameon=False, fontsize=9)
-    save_fig('fig4_scanpath_recovery')
+    # Legend (Strict positioning)
+    ax.legend(bbox_to_anchor=(0.5, -0.15), loc='lower center', ncol=3, frameon=False, fontsize=10)
+    
+    plt.tight_layout()
+    output_path = "docs/NeurIPS/figures/fig4_scanpath_recovery_masterpiece.pdf"
+    plt.savefig(output_path, bbox_inches='tight', transparent=True)
+    plt.savefig(output_path.replace('.pdf', '.png'), bbox_inches='tight') # PNG for quick review
+    print(f"✅ Masterpiece Figure generated: {output_path}")
 
 if __name__ == "__main__":
-    print("🚀 Generating Final NeurIPS Figures (Real Data)...")
+    print("🚀 Generating Final NeurIPS Figures (Decoupled Architecture)...")
     plot_kinematics()
     plot_ovp_anomaly()
     plot_robustness()
