@@ -43,13 +43,19 @@ def save_fig(name):
 # --- Figure 1: Noise Robustness (Stress Test) ---
 # High impact: Shows how STOCK-T dominates as noise increases.
 def plot_noise_robustness():
-    data = {
-        'Drift': [0, 15, 30, 45, 60, 75],
-        'Baseline': [32.34, 30.64, 24.58, 19.10, 13.42, 8.50],
-        'EM Only': [81.54, 72.04, 70.46, 74.90, 60.59, 54.86],
-        'STOCK-T': [90.49, 90.75, 90.49, 90.49, 82.50, 51.95]
-    }
-    df = pd.DataFrame(data)
+    csv_path = "data/geco/noise_stress_results.csv"
+    if os.path.exists(csv_path):
+        df = pd.read_csv(csv_path).rename(
+            columns={"EM_Only": "EM Only", "STOCK_T": "STOCK-T"}
+        )
+    else:
+        data = {
+            'Drift': [0, 15, 30, 45, 60, 75],
+            'Baseline': [32.34, 30.64, 24.58, 19.10, 13.42, 8.50],
+            'EM Only': [81.54, 72.04, 70.46, 74.90, 60.59, 54.86],
+            'STOCK-T': [90.49, 90.75, 90.49, 90.49, 82.50, 51.95]
+        }
+        df = pd.DataFrame(data)
     
     plt.figure(figsize=(TEXT_WIDTH, 3.5))
     plt.plot(df['Drift'], df['Baseline'], 'r--', marker='x', label='Baseline (Nearest Box)', alpha=0.8)
@@ -103,7 +109,7 @@ def plot_ovp_correlation():
 # --- Figure 3: Component-Wise Ablation Waterfall ---
 # Explains WHY it works: EM vs POM vs OVP.
 def plot_ablation_waterfall():
-    # Data from docs/experiments/2026-05-02_NeurIPS_Ablation_Study.md
+    # Data refreshed from 2026-05-03 reproducibility rerun (evaluate_ablation.py)
     configs = [
         'Base Viterbi',
         '+ MH-EM',
@@ -111,8 +117,8 @@ def plot_ablation_waterfall():
         '+ POM (STOCK-T)',
         'Ultimate (+OVP)'
     ]
-    strict_acc = [48.72, 49.36, 48.72, 94.23, 92.31]
-    relaxed_acc = [57.69, 57.69, 57.69, 100.0, 100.0]
+    strict_acc = [48.72, 77.56, 73.72, 83.33, 78.85]
+    relaxed_acc = [61.54, 98.72, 98.72, 100.0, 98.72]
     
     x = np.arange(len(configs))
     width = 0.4
@@ -127,13 +133,26 @@ def plot_ablation_waterfall():
     plt.ylabel('Accuracy (%)')
     plt.title('Ablation Study: Sequential Contribution of Modular Innovations')
     plt.xticks(x, configs, rotation=15)
-    plt.legend(loc='lower right')
-    plt.ylim(0, 115)
+    plt.legend(loc='lower right', frameon=True, fontsize=8, framealpha=0.9)
+    plt.ylim(0, 125)
     
-    # Annotate breakthrough
-    plt.annotate('Linguistic Context Enablement', xy=(3, 80), xytext=(0.5, 105),
-                 arrowprops=dict(facecolor='black', shrink=0.05, width=1, headwidth=5),
-                 fontsize=9, fontweight='bold')
+    # Callout: Using an arrow/bracket to imply the scope of Linguistic Context (POM onwards)
+    ax = plt.gca()
+    # Draw a horizontal line with ticks to indicate the range
+    ax.plot([2.6, 4.4], [112, 112], color='#333333', lw=1.5, solid_capstyle='butt')
+    ax.plot([2.6, 2.6], [110, 112], color='#333333', lw=1.5)
+    ax.plot([4.4, 4.4], [110, 112], color='#333333', lw=1.5)
+    
+    ax.text(
+        3.5, 
+        115, 
+        "Linguistic Context Enablement",
+        ha="center", 
+        va="bottom",
+        fontsize=8,
+        fontweight="bold",
+        color="#333333"
+    )
     
     save_fig('fig3_ablation_study')
 

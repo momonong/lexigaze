@@ -130,148 +130,300 @@ def plot_robustness():
     sns.despine()
     save_fig('fig3_robustness')
 
-# --- Fig 4: Qualitative Scanpath Recovery (Masterpiece - Decoupled Architecture) ---
+# --- Fig 4: Scanpath (two typographic rows + real per-word offset from true in px) ---
 def plot_scanpath_final():
-    clean_csv_path = "data/geco/geco_pp01_trial5_clean.csv"
-    bayes_csv_path = "data/geco/geco_pp01_bayesian_results.csv"
-    if not os.path.exists(clean_csv_path) or not os.path.exists(bayes_csv_path):
+    csv_path = "data/geco/geco_pp01_trial5_stockt_from_main_m4_trajectory.csv"
+    if not os.path.exists(csv_path):
         return
 
-    segment_start = 75
-    segment_end = 79
+    plt.rcParams["font.family"] = "serif"
 
-    df_clean = pd.read_csv(clean_csv_path).copy()
-    df_bayes = pd.read_csv(bayes_csv_path).copy()
-    df_clean["source_row"] = df_clean.index
+    line1_words = ["There", "was", "a", "moment's", "stupefied", "silence."]
+    line2_words = ["Japp", "cried,", "'you're", "the", "goods!'"]
+    line1_set, line2_set = frozenset(line1_words), frozenset(line2_words)
+    ordered_words = line1_words + line2_words
 
-    required_clean_cols = ["WORD_ID", "WORD", "true_x", "true_y", "WORD_TOTAL_READING_TIME", "source_row"]
-    required_bayes_cols = ["WORD_ID", "webcam_x", "webcam_y", "calibrated_x", "calibrated_y"]
-    missing_clean = [c for c in required_clean_cols if c not in df_clean.columns]
-    missing_bayes = [c for c in required_bayes_cols if c not in df_bayes.columns]
-    if missing_clean or missing_bayes:
-        raise ValueError(
-            f"Missing required columns. clean={missing_clean}, bayes={missing_bayes}"
-        )
-
-    df_segment = df_clean[(df_clean["source_row"] >= segment_start) & (df_clean["source_row"] <= segment_end)].copy()
-    if df_segment.empty:
-        raise ValueError(f"No rows found for requested segment {segment_start}->{segment_end}.")
-
-    df_bayes = df_bayes.drop_duplicates(subset=["WORD_ID"], keep="first")
-    df_segment = df_segment.merge(
-        df_bayes[required_bayes_cols],
-        on="WORD_ID",
-        how="left",
-    )
-
-    numeric_cols = [
-        "true_x", "true_y", "WORD_TOTAL_READING_TIME",
-        "webcam_x", "webcam_y", "calibrated_x", "calibrated_y",
+    df = pd.read_csv(csv_path).copy()
+    required_cols = [
+        "WORD_ID", "WORD", "true_x", "true_y",
+        "raw_x", "raw_y", "corrected_x", "corrected_y",
+        "WORD_TOTAL_READING_TIME",
     ]
-    for col in numeric_cols:
-        df_segment[col] = pd.to_numeric(df_segment[col], errors="coerce")
-    df_segment = df_segment.dropna(subset=["true_x", "true_y", "webcam_x", "webcam_y", "calibrated_x", "calibrated_y"])
-    if df_segment.empty:
-        raise ValueError("Segment rows are missing raw/corrected coordinates after merge.")
+    missing = [c for c in required_cols if c not in df.columns]
+    if missing:
+        raise ValueError(f"Missing required columns for Fig4 trajectory: {missing}")
 
-    # Extract data for this golden segment only
-    word_text = df_segment["WORD"].astype(str).str.strip().to_numpy()
-    word_center_x = df_segment["true_x"].to_numpy()
-    raw_x = df_segment["webcam_x"].to_numpy()
-    raw_y = df_segment["webcam_y"].to_numpy()
-    corrected_x = df_segment["calibrated_x"].to_numpy()
-    corrected_y = df_segment["calibrated_y"].to_numpy()
-    durations = df_segment["WORD_TOTAL_READING_TIME"].fillna(df_segment["WORD_TOTAL_READING_TIME"].median()).to_numpy()
+    def _normalize_word(token):
+        cleaned = str(token).strip().lower()
+        for ch in ['"', "'", ",", ".", "!", "?", ";", ":"]:
+            cleaned = cleaned.replace(ch, "")
+        return cleaned
 
-    # Clean baseline for static text stimulus
-    baseline_y = float(np.median(df_segment["true_y"].to_numpy()))
-    box_h = 34.0
+    ordered_norm_words = [_normalize_word(w) for w in ordered_words]
 
-    dur_min = float(np.min(durations))
-    dur_span = float(np.max(durations) - dur_min)
-    if dur_span == 0.0:
-        marker_sizes = np.full_like(durations, 120.0, dtype=float)
+    df = df[df["WORD_ID"].astype(str).str.startswith("3-5-")].copy()
+    df["norm_word"] = df["WORD"].map(_normalize_word)
+    df = df.drop_duplicates(subset=["WORD_ID"], keep="first")
+
+    selected = []
+    used = set()
+    for disp, norm_word in zip(ordered_words, ordered_norm_words):
+        cand = df[(df["norm_word"] == norm_word) & (~df.index.isin(list(used)))]
+        if cand.empty:
+            continue
+        idx = cand.index[0]
+        used.add(idx)
+        row = df.loc[idx].copy()
+        row["display_word"] = disp
+        selected.append(row)
+
+    if len(selected) < 6:
+        raise ValueError("Could not retrieve enough real trajectory points for the phrase.")
+
+    df_phrase = pd.DataFrame(selected)
+    for col in required_cols[2:]:
+        df_phrase[col] = pd.to_numeric(df_phrase[col], errors="coerce")
+    df_phrase = df_phrase.dropna(
+        subset=["true_x", "true_y", "raw_x", "raw_y", "corrected_x", "corrected_y"]
+    )
+    if df_phrase.empty:
+        raise ValueError("Selected rows have invalid coordinates.")
+
+    x_lo, x_hi = 0.05, 0.95
+    # Extra vertical gap so gaze markers (even after scaling) rarely sit on top of glyphs.
+    y_line1, y_line2 = 1.22, -0.28
+
+    words_line1 = [str(r["display_word"]) for _, r in df_phrase.iterrows() if str(r["display_word"]) in line1_set]
+    words_line2 = [str(r["display_word"]) for _, r in df_phrase.iterrows() if str(r["display_word"]) in line2_set]
+
+    def _pack_word_boxes(words, x0, x1, gap_min=0.014):
+        """Return centers and half-widths (full width = 2*half_w) so boxes do not overlap."""
+        n = len(words)
+        if n == 0:
+            return np.array([]), np.array([])
+        half = np.array([0.018 + len(w) * 0.00545 for w in words], dtype=float)
+        need = float(2.0 * np.sum(half) + gap_min * max(0, n - 1))
+        span = float(x1 - x0)
+        if need > span and need > 1e-9:
+            half *= span / need * 0.98
+        centers = np.empty(n, dtype=float)
+        x_cursor = x0 + float(half[0])
+        centers[0] = x_cursor
+        for i in range(1, n):
+            x_cursor += float(half[i - 1] + gap_min + half[i])
+            centers[i] = x_cursor
+        # Center the whole row in [x0, x1]
+        row_half_span = float(centers[-1] + half[-1] - (centers[0] - half[0]))
+        margin = 0.5 * (span - row_half_span)
+        shift = x0 + margin - (centers[0] - half[0])
+        centers = centers + shift
+        return centers, half
+
+    c1, half1 = _pack_word_boxes(words_line1, x_lo, x_hi)
+    c2, half2 = _pack_word_boxes(words_line2, x_lo, x_hi)
+
+    layout_x, layout_y, layout_half = [], [], []
+    i1 = i2 = 0
+    for _, row in df_phrase.iterrows():
+        w = str(row["display_word"])
+        if w in line1_set:
+            layout_x.append(float(c1[i1]))
+            layout_y.append(y_line1)
+            layout_half.append(float(half1[i1]))
+            i1 += 1
+        else:
+            layout_x.append(float(c2[i2]))
+            layout_y.append(y_line2)
+            layout_half.append(float(half2[i2]))
+            i2 += 1
+    lx = np.array(layout_x, dtype=float)
+    ly = np.array(layout_y, dtype=float)
+    lhalf = np.array(layout_half, dtype=float)
+
+    tx = df_phrase["true_x"].to_numpy(dtype=float)
+    ty = df_phrase["true_y"].to_numpy(dtype=float)
+    dx_raw = df_phrase["raw_x"].to_numpy(dtype=float) - tx
+    dy_raw = df_phrase["raw_y"].to_numpy(dtype=float) - ty
+    dx_corr = df_phrase["corrected_x"].to_numpy(dtype=float) - tx
+    dy_corr = df_phrase["corrected_y"].to_numpy(dtype=float) - ty
+
+    def _axis_scale(*arrays, pct=88.0):
+        """Robust |Δ| scale per axis so one outlier or one dominant axis does not squash the other."""
+        stacked = np.concatenate([np.asarray(a, dtype=float).ravel() for a in arrays])
+        stacked = np.abs(stacked[np.isfinite(stacked)])
+        if stacked.size == 0:
+            return 1.0
+        v = float(np.percentile(stacked, pct))
+        return max(v, 1e-6)
+
+    sx = _axis_scale(dx_raw, dx_corr, pct=88.0)
+    sy = _axis_scale(dy_raw, dy_corr, pct=88.0)
+    # Clip normalized offsets so one spiky word cannot paint over the whole row / other line.
+    clip = 1.0
+    nx_raw = np.clip(dx_raw / sx, -clip, clip)
+    ny_raw = np.clip(dy_raw / sy, -clip, clip)
+    nx_corr = np.clip(dx_corr / sx, -clip, clip)
+    ny_corr = np.clip(dy_corr / sy, -clip, clip)
+    band_x, band_y = 0.14, 0.12
+    vis_boost = 1.08
+    band_x *= vis_boost
+    band_y *= vis_boost
+    rx = lx + band_x * nx_raw
+    ry = ly + band_y * ny_raw
+    cx = lx + band_x * nx_corr
+    cy = ly + band_y * ny_corr
+
+    mean_raw = float(np.mean(np.hypot(dx_raw, dy_raw)))
+    mean_corr = float(np.mean(np.hypot(dx_corr, dy_corr)))
+
+    n_points = len(df_phrase)
+    if df_phrase["WORD_TOTAL_READING_TIME"].notna().any():
+        durs = df_phrase["WORD_TOTAL_READING_TIME"].fillna(
+            df_phrase["WORD_TOTAL_READING_TIME"].median()
+        ).to_numpy(dtype=float)
+        d_min, d_max = float(np.min(durs)), float(np.max(durs))
+        d_span = d_max - d_min
+        sizes = np.full(n_points, 95.0) if d_span < 1e-6 else 55.0 + ((durs - d_min) / d_span) * 140.0
     else:
-        marker_sizes = 65.0 + ((durations - dur_min) / dur_span) * 150.0
+        sizes = np.full(n_points, 95.0)
 
-    fig, ax = plt.subplots(figsize=(TEXT_WIDTH, 2.25))
+    fig, ax = plt.subplots(figsize=(TEXT_WIDTH, 2.95))
     fig.patch.set_facecolor("white")
     ax.set_facecolor("white")
 
-    # Trajectory lines + markers
-    raw_line, = ax.plot(
-        raw_x, raw_y,
-        linestyle="--", linewidth=1.0, color="#E63946", alpha=0.5,
-        marker="x", markersize=6.0, zorder=2, label="Raw gaze"
-    )
-    corrected_line, = ax.plot(
-        corrected_x, corrected_y,
-        linestyle="-", linewidth=1.1, color="#2A9D8F", alpha=0.85,
-        marker="o", markersize=4.5, zorder=3, label="STOCK-T corrected"
-    )
-    ax.scatter(
-        corrected_x, corrected_y,
-        s=marker_sizes, color="#2A9D8F", edgecolor="white", linewidth=0.6,
-        alpha=0.9, zorder=3
+    bh = 0.20
+    split_idx = next(
+        (i for i in range(n_points) if str(df_phrase.iloc[i]["display_word"]) in line2_set),
+        n_points,
     )
 
-    # Semantic gravity arrows: raw -> corrected
-    for x0, y0, x1, y1 in zip(raw_x, raw_y, corrected_x, corrected_y):
+    def _plot_scan_segments(xs, ys, **kwargs):
+        """Do not draw one continuous polyline across both text rows (that reads as smear)."""
+        label = kwargs.pop("label", None)
+        if split_idx <= 0 or split_idx >= n_points:
+            (ln,) = ax.plot(xs, ys, label=label, **kwargs)
+            return ln
+        (h1,) = ax.plot(xs[:split_idx], ys[:split_idx], label=label, **kwargs)
+        ax.plot(xs[split_idx:], ys[split_idx:], label="_nolegend_", **kwargs)
+        return h1
+
+    raw_line = _plot_scan_segments(
+        rx,
+        ry,
+        color="#C1121F",
+        linestyle="--",
+        linewidth=1.05,
+        marker="x",
+        markersize=6.0,
+        markeredgewidth=1.1,
+        alpha=0.72,
+        zorder=3,
+        label="Raw gaze (Δ vs true)",
+    )
+    corrected_line = _plot_scan_segments(
+        cx,
+        cy,
+        color="#1b7f6a",
+        linestyle="-",
+        linewidth=1.35,
+        marker="o",
+        markersize=4.8,
+        alpha=0.92,
+        zorder=4,
+        label="STOCK-T (Δ vs true)",
+    )
+    ax.scatter(
+        cx, cy,
+        s=sizes,
+        color="#1b7f6a",
+        edgecolor="white",
+        linewidth=0.55,
+        alpha=0.95,
+        zorder=4,
+    )
+
+    for x0, y0, x1, y1 in zip(rx, ry, cx, cy):
         ax.annotate(
             "",
             xy=(x1, y1),
             xytext=(x0, y0),
             arrowprops=dict(
                 arrowstyle="->",
-                color="gray",
+                color="#888888",
                 linestyle=":",
-                linewidth=1.0,
-                alpha=0.7,
-                connectionstyle="arc3,rad=-0.2",
-                shrinkA=2,
-                shrinkB=2,
+                linewidth=0.95,
+                alpha=0.55,
+                connectionstyle="arc3,rad=-0.22",
+                shrinkA=3,
+                shrinkB=3,
             ),
             zorder=2,
         )
-    arc_proxy, = ax.plot([], [], color="gray", linestyle=":", linewidth=1.0, label="Semantic gravity arc")
 
-    # Text and bounding boxes on top
-    for txt, cx in zip(word_text, word_center_x):
-        w = max(52.0, len(txt) * 10.0 + 16.0)
+    for i in range(n_points):
+        wtxt = str(df_phrase.iloc[i]["display_word"])
+        bw = 2.0 * float(lhalf[i])
         rect = patches.Rectangle(
-            (cx - w / 2.0, baseline_y - box_h / 2.0),
-            w,
-            box_h,
-            linewidth=0.8,
-            edgecolor="lightgray",
+            (lx[i] - bw / 2.0, ly[i] - bh / 2.0),
+            bw,
+            bh,
+            linewidth=0.75,
+            edgecolor="#c0c0c0",
             facecolor="white",
-            alpha=0.9,
+            alpha=1.0,
             linestyle="--",
-            zorder=5,
+            zorder=12,
         )
         ax.add_patch(rect)
         ax.text(
-            cx, baseline_y, txt,
-            ha="center", va="center", fontsize=10.5, family="serif", color="black", zorder=6
+            lx[i],
+            ly[i],
+            wtxt,
+            ha="center",
+            va="center",
+            fontsize=9.0,
+            family="serif",
+            color="#1a1a1a",
+            zorder=13,
+            bbox=dict(boxstyle="round,pad=0.15", facecolor="white", edgecolor="none", alpha=0.92),
         )
+    arc_proxy, = ax.plot([], [], color="gray", linestyle=":", linewidth=1.0, label="Correction arc")
 
-    all_x = np.concatenate([word_center_x, raw_x, corrected_x])
-    all_y = np.concatenate([[baseline_y], raw_y, corrected_y])
-    ax.set_xlim(float(np.min(all_x)) - 55.0, float(np.max(all_x)) + 55.0)
-    ax.set_ylim(float(np.min(all_y)) - 60.0, float(np.max(all_y)) + 40.0)
+    pad = 0.07
+    all_x = np.concatenate([rx, cx, lx])
+    all_y = np.concatenate([ry, cy, ly])
+    ax.set_xlim(float(np.min(all_x)) - pad, float(np.max(all_x)) + pad)
+    ax.set_ylim(float(np.min(all_y)) - pad - 0.02, float(np.max(all_y)) + pad + 0.06)
 
-    # No clutter
     ax.set_xticks([])
     ax.set_yticks([])
     for spine in ax.spines.values():
         spine.set_visible(False)
 
+    note = (
+        f"Schematic word rows; gaze shows per-word offset from true center (px). "
+        f"x scaled by p88|Δx|, y by p88|Δy|, ×{vis_boost:.2f} for legibility. "
+        f"Mean ‖Δ‖: raw {mean_raw:.1f}px → corrected {mean_corr:.1f}px on this excerpt."
+    )
+    ax.text(
+        0.5,
+        -0.26,
+        note,
+        transform=ax.transAxes,
+        fontsize=6.2,
+        ha="center",
+        va="top",
+        color="#444444",
+        linespacing=1.25,
+    )
+
     ax.legend(
         handles=[raw_line, corrected_line, arc_proxy],
-        bbox_to_anchor=(0.5, -0.15),
+        bbox_to_anchor=(0.5, -0.12),
         loc="lower center",
         ncol=3,
         frameon=False,
+        fontsize=7.5,
     )
 
     plt.tight_layout()
