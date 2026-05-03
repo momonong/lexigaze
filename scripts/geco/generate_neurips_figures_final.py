@@ -132,82 +132,181 @@ def plot_robustness():
 
 # --- Fig 4: Qualitative Scanpath Recovery (Masterpiece - Decoupled Architecture) ---
 def plot_scanpath_final():
-    # 1. Extract REAL Coordinates
     csv_path = "data/geco/geco_pp01_bayesian_results.csv"
-    if not os.path.exists(csv_path): return
-    df_traj = pd.read_csv(csv_path).iloc[:6].copy()
-    
-    # 2. Dynamic Text Placement (Real X, Clean Y)
-    clean_y = df_traj['true_y'].median()
-    
-    words = df_traj['WORD'].values
-    real_x = df_traj['true_x'].values
-    durations = df_traj['WORD_TOTAL_READING_TIME'].values
-    
-    raw_x = df_traj['webcam_x'].values
-    raw_y = df_traj['webcam_y'].values
-    corrected_x = df_traj['calibrated_x'].values
-    corrected_y = df_traj['calibrated_y'].values
-    
-    # 4. Professional Rendering
-    fig, ax = plt.subplots(figsize=(8, 3.5))
-    
-    # Pad limits based on real data
-    all_x = np.concatenate([real_x, raw_x, corrected_x])
-    all_y = np.concatenate([[clean_y], raw_y, corrected_y])
-    ax.set_xlim(np.min(all_x) - 50, np.max(all_x) + 50)
-    ax.set_ylim(np.min(all_y) - 50, np.max(all_y) + 50)
-    
-    # NO axes or spines
-    ax.set_xticks([]); ax.set_yticks([])
-    for s in ax.spines.values(): s.set_visible(False)
-    
-    # Draw Background Stimulus (Z-order 1)
-    for txt, x in zip(words, real_x):
-        txt_str = str(txt).strip()
-        w_width = len(txt_str) * 7.5 + 15
-        
-        # Subtle Highlight for keywords
-        is_heavy = txt_str in ["stupefied", "silence.", "cried,"]
-        fc = "#FF8C00" if is_heavy else "white"
-        alpha_val = 0.2 if is_heavy else 1.0
-        
-        ax.add_patch(patches.Rectangle((x - w_width/2, clean_y - 16), w_width, 32, 
-                                       lw=0.7, ec='lightgray', fc=fc, ls='--', alpha=alpha_val, zorder=1))
-        ax.text(x, clean_y, txt_str, ha='center', va='center', fontsize=11, family='serif', zorder=1)
+    if not os.path.exists(csv_path):
+        return
 
-    # 3. Plot the REAL Trajectories
-    # Raw Gaze (Z-order 2)
-    ax.plot(raw_x, raw_y, color="#E63946", ls='--', alpha=0.35, lw=1.2, zorder=2, label="Raw Gaze (Hardware Drift)")
-    ax.scatter(raw_x, raw_y, color="#E63946", marker='x', s=35, alpha=0.5, zorder=2)
-    
-    # Corrected Gaze (Z-order 4)
-    ax.plot(corrected_x, corrected_y, color="#2A9D8F", lw=2.5, alpha=0.9, zorder=4, label="STOCK-T Corrected")
-    # Marker sizes scaled by real GECO durations
-    sizes = (durations / np.max(durations)) * 200 + 40
-    ax.scatter(corrected_x, corrected_y, color="#2A9D8F", s=sizes, marker='o', ec='white', lw=0.6, alpha=0.95, zorder=4)
+    df_clean = pd.read_csv(csv_path).copy()
 
-    # Semantic Gravity Arcs (Z-order 3)
-    for i in range(len(real_x)):
-        ax.annotate("", xy=(corrected_x[i], corrected_y[i]), xytext=(raw_x[i], raw_y[i]),
-                    arrowprops=dict(arrowstyle="->", color="gray", linestyle=":", 
-                                    shrinkA=2, shrinkB=2, alpha=0.5,
-                                    connectionstyle="arc3,rad=-0.2"), zorder=3)
-    ax.plot([], [], color="gray", ls=":", label="Semantic Gravity Arc", zorder=3)
-    
-    # Directional Flow on corrected trajectory
-    for i in range(len(corrected_x)-1):
-        ax.annotate("", xy=(corrected_x[i+1], corrected_y[i+1]), xytext=(corrected_x[i], corrected_y[i]),
-                    arrowprops=dict(arrowstyle="-|>", color="#2A9D8F", lw=0, alpha=0.5, shrinkA=18, shrinkB=18),
-                    zorder=4)
+    required_cols = [
+        "WORD",
+        "WORD_ID",
+        "WORD_TOTAL_READING_TIME",
+        "webcam_x",
+        "webcam_y",
+        "calibrated_x",
+        "calibrated_y",
+    ]
+    missing_cols = [c for c in required_cols if c not in df_clean.columns]
+    if missing_cols:
+        raise ValueError(f"Missing required columns for scanpath rendering: {missing_cols}")
 
-    # Legend (Strict positioning)
-    ax.legend(bbox_to_anchor=(0.5, -0.15), loc='lower center', ncol=3, frameon=False, fontsize=10)
-    
+    # ---- Decoupled architecture: static stimulus definition (NOT from chronological fixation logs) ----
+    line1_words = ["There", "was", "a", "moment's", "stupefied", "silence."]
+    line2_words = ["Japp", "cried,", "'you're", "the", "goods!"]
+
+    def _layout_line(words, baseline_y, start_x=105.0, char_w=11.0, min_w=52.0, pad=16.0, gap=22.0):
+        boxes = []
+        cursor_x = start_x
+        for word in words:
+            width = max(min_w, len(word) * char_w + pad)
+            center_x = cursor_x + width / 2.0
+            boxes.append({
+                "word": word,
+                "x": center_x,
+                "y": baseline_y,
+                "w": width,
+                "h": 34.0,
+            })
+            cursor_x += width + gap
+        return boxes
+
+    stimulus_boxes = _layout_line(line1_words, baseline_y=220.0) + _layout_line(line2_words, baseline_y=120.0)
+
+    # ---- Real trajectory extraction from dataframe only ----
+    def _normalize_word(token):
+        cleaned = str(token).strip().lower()
+        cleaned = cleaned.replace('"', "").replace("'", "")
+        for ch in [",", ".", "!", "?", ";", ":"]:
+            cleaned = cleaned.replace(ch, "")
+        return cleaned
+
+    target_vocab = {
+        _normalize_word(w)
+        for w in (line1_words + line2_words)
+    }
+    target_vocab.add("youre")
+
+    word_ids = df_clean["WORD_ID"].astype(str)
+    is_trial_3_5 = word_ids.str.startswith("3-5-")
+    df_trial = df_clean.loc[is_trial_3_5].copy()
+    df_trial["normalized_word"] = df_trial["WORD"].map(_normalize_word)
+
+    # Restrict to the intended phrase region (There ... goods!)
+    there_candidates = df_trial.index[df_trial["normalized_word"] == "there"]
+    goods_candidates = df_trial.index[df_trial["normalized_word"] == "goods"]
+    if len(there_candidates) == 0 or len(goods_candidates) == 0:
+        raise ValueError("Could not locate phrase boundaries ('There' to 'goods!') in dataframe.")
+
+    start_idx = there_candidates[0]
+    end_idx = next((idx for idx in goods_candidates if idx >= start_idx), None)
+    if end_idx is None:
+        raise ValueError("Could not locate 'goods!' after 'There' in dataframe ordering.")
+
+    df_phrase = df_trial.loc[start_idx:end_idx].copy()
+    df_phrase = df_phrase[df_phrase["normalized_word"].isin(target_vocab)].copy()
+    if df_phrase.empty:
+        raise ValueError("No trajectory rows matched target Figure 4 phrase.")
+
+    numeric_cols = ["webcam_x", "webcam_y", "calibrated_x", "calibrated_y", "WORD_TOTAL_READING_TIME"]
+    for col in numeric_cols:
+        df_phrase[col] = pd.to_numeric(df_phrase[col], errors="coerce")
+    df_phrase = df_phrase.dropna(subset=numeric_cols)
+    if df_phrase.empty:
+        raise ValueError("Matched trajectory rows contain invalid numeric coordinates.")
+
+    raw_x = df_phrase["webcam_x"].to_numpy()
+    raw_y = df_phrase["webcam_y"].to_numpy()
+    corrected_x = df_phrase["calibrated_x"].to_numpy()
+    corrected_y = df_phrase["calibrated_y"].to_numpy()
+    durations = df_phrase["WORD_TOTAL_READING_TIME"].to_numpy()
+
+    dur_min = float(np.min(durations))
+    dur_span = float(np.max(durations) - dur_min)
+    if dur_span == 0.0:
+        sizes = np.full_like(durations, 130.0, dtype=float)
+    else:
+        sizes = 70.0 + ((durations - dur_min) / dur_span) * 190.0
+
+    fig, ax = plt.subplots(figsize=(TEXT_WIDTH, 2.4))
+    fig.patch.set_facecolor("white")
+    ax.set_facecolor("white")
+
+    # Real trajectories (markers only, no chronological connecting lines)
+    raw_points = ax.scatter(
+        raw_x, raw_y, s=52, color="#E63946", marker="x",
+        linewidth=1.4, alpha=0.9, zorder=2, label="Raw gaze"
+    )
+    corrected_points = ax.scatter(
+        corrected_x, corrected_y, s=sizes, color="#2A9D8F", edgecolor="white",
+        linewidth=0.6, alpha=0.95, zorder=3, label="STOCK-T corrected"
+    )
+
+    # Semantic gravity arcs: drifted raw -> corrected
+    for x0, y0, x1, y1 in zip(raw_x, raw_y, corrected_x, corrected_y):
+        ax.annotate(
+            "",
+            xy=(x1, y1),
+            xytext=(x0, y0),
+            arrowprops=dict(
+                arrowstyle="->",
+                color="gray",
+                linestyle=":",
+                linewidth=1.0,
+                alpha=0.75,
+                shrinkA=2,
+                shrinkB=2,
+                connectionstyle="arc3,rad=-0.2",
+            ),
+            zorder=2,
+        )
+    arc_proxy, = ax.plot([], [], color="gray", linestyle=":", linewidth=1.0, label="Semantic gravity arc")
+
+    # Static stimulus boxes/text rendered on top for readability
+    for box in stimulus_boxes:
+        rect = patches.Rectangle(
+            (box["x"] - box["w"] / 2.0, box["y"] - box["h"] / 2.0),
+            box["w"],
+            box["h"],
+            linewidth=0.8,
+            edgecolor="lightgray",
+            facecolor="white",
+            alpha=0.8,
+            linestyle="--",
+            zorder=5,
+        )
+        ax.add_patch(rect)
+        ax.text(
+            box["x"], box["y"], box["word"],
+            ha="center", va="center", fontsize=10.5, family="serif", color="black", zorder=6
+        )
+
+    # Bounds from both stimulus and real trajectories
+    stim_x = np.array([b["x"] for b in stimulus_boxes], dtype=float)
+    stim_y = np.array([b["y"] for b in stimulus_boxes], dtype=float)
+    all_x = np.concatenate([raw_x, corrected_x, stim_x])
+    all_y = np.concatenate([raw_y, corrected_y, stim_y])
+    ax.set_xlim(float(np.min(all_x)) - 55.0, float(np.max(all_x)) + 55.0)
+    ax.set_ylim(float(np.min(all_y)) - 70.0, float(np.max(all_y)) + 45.0)
+
+    # NeurIPS minimalist canvas
+    ax.set_xticks([])
+    ax.set_yticks([])
+    for spine in ax.spines.values():
+        spine.set_visible(False)
+
+    ax.legend(
+        handles=[raw_points, corrected_points, arc_proxy],
+        bbox_to_anchor=(0.5, -0.15),
+        loc="lower center",
+        ncol=3,
+        frameon=False,
+    )
+
     plt.tight_layout()
     output_path = "docs/NeurIPS/figures/fig4_scanpath_recovery_masterpiece.pdf"
-    plt.savefig(output_path, bbox_inches='tight', transparent=True)
-    plt.savefig(output_path.replace('.pdf', '.png'), bbox_inches='tight') # PNG for quick review
+    plt.savefig(output_path, bbox_inches="tight", transparent=False, facecolor="white")
+    plt.savefig(output_path.replace(".pdf", ".png"), bbox_inches="tight", transparent=False, facecolor="white")
     print(f"✅ Masterpiece Figure generated: {output_path}")
 
 if __name__ == "__main__":
