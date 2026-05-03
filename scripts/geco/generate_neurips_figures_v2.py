@@ -60,7 +60,7 @@ def plot_noise_robustness():
     plt.ylabel('Strict Word Accuracy (%)')
     plt.title('Performance Degradation under Systematic Hardware Drift')
     plt.grid(True, linestyle=':', alpha=0.6)
-    plt.legend(frameon=True, facecolor='white', framealpha=0.9)
+    plt.legend(frameon=True, facecolor='white', framealpha=0.9, loc='upper right')
     plt.ylim(0, 105)
     plt.axvline(45, color='gray', linestyle=':', label='GECO Std Noise')
     save_fig('fig1_noise_robustness')
@@ -121,6 +121,9 @@ def plot_ablation_waterfall():
     rects1 = plt.bar(x - width/2, strict_acc, width, label='Strict Match (Exact)', color='#5DADE2')
     rects2 = plt.bar(x + width/2, relaxed_acc, width, label='Relaxed Match ($\pm 1$)', color='#AED6F1')
     
+    plt.bar_label(rects1, padding=3, fmt='%.1f', fontsize=8, color='#333333')
+    plt.bar_label(rects2, padding=3, fmt='%.1f', fontsize=8, color='#333333')
+
     plt.ylabel('Accuracy (%)')
     plt.title('Ablation Study: Sequential Contribution of Modular Innovations')
     plt.xticks(x, configs, rotation=15)
@@ -128,7 +131,7 @@ def plot_ablation_waterfall():
     plt.ylim(0, 115)
     
     # Annotate breakthrough
-    plt.annotate('Linguistic Context Enablement', xy=(3, 95), xytext=(0.5, 105),
+    plt.annotate('Linguistic Context Enablement', xy=(3, 80), xytext=(0.5, 105),
                  arrowprops=dict(facecolor='black', shrink=0.05, width=1, headwidth=5),
                  fontsize=9, fontweight='bold')
     

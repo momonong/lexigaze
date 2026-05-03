@@ -252,5 +252,41 @@ This document records the step-by-step implementation of the LexiGaze Neuro-Symb
     4. **Dataset Gaze Kinematics**: Comparative EDA of fixation duration, skipping, regressions, and saccade amplitude.
 - **Status**: Visualizations generated and saved to `docs/NeurIPS/figures/`.
 
+---
+
+## Phase 20: Adaptive Data-Driven Visualization (Skill 25)
+
+### 25. Skill 25: Adaptive Data-Driven NeurIPS Visualization
+- **Objective**: Implement a dynamic, schema-aware visualization engine that automatically selects optimal chart types and sizes while adhering to NeurIPS Golden Typography.
+- **Implementation Date**: May 3, 2026
+- **Key Components**:
+    - `scripts/geco/adaptive_neurips_plots.py`: A script that performs multi-step analysis (Analyze $\rightarrow$ Strategize $\rightarrow$ Execute) for diverse datasets.
+    - Automated sizing logic: Wide (Full Column) for time-series/benchmarks, Square (Half Column) for correlations.
+- **Generated Figures**:
+    1. **`noise_robustness_adaptive.pdf`**: Line chart showing robustness trends across vertical drift.
+    2. **`ovp_correlation_adaptive.pdf`**: Scatter plot establishing the $r = -0.83$ correlation between proficiency and target preference.
+    3. **`final_benchmark_adaptive.pdf`**: Grouped bar chart with exact percentage labels for the core ablation staircase.
+- **Status**: Adaptive pipeline verified and output generated.
+
+---
+
+## Phase 21: Data-Driven Eye-Tracking Visualizations (Skill 25)
+
+### 25. Skill 25: Official NeurIPS Publication Visuals
+- **Objective**: Replace mock-data figures with authentic, data-driven visualizations derived from the GECO corpus.
+- **Implementation Date**: May 3, 2026
+- **Key Components**:
+    - `scripts/geco/generate_neurips_figures_final.py`: The definitive rendering engine for the NeurIPS paper.
+    - Integration of **Real GECO Stimulus** coordinates and reading durations.
+    - Implementation of **Semantic Gravity Arcs** (curved correction vectors) and directional saccade flow.
+- **Generated Figures**:
+    1. **`fig1_kinematics.pdf`**: Comparative EDA of L1 vs L2 reading behaviors.
+    2. **`fig2_ovp_anomaly.pdf`**: Corpus-scale correlation between proficiency and target preference.
+    3. **`fig3_robustness.pdf`**: Performance degradation curve under extreme hardware drift.
+    4. **`fig4_scanpath_recovery.pdf`**: Final high-fidelity qualitative proof of line-locking recovery using real data.
+- **Status**: Official publication suite verified and archived in `docs/NeurIPS/figures/`.
+
+
+
 
 
