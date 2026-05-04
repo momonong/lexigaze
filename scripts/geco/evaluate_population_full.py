@@ -36,18 +36,20 @@ def inject_noise(df):
 
 def evaluate_metrics(target_indices, predicted_indices, estimated_drift, true_drift):
     total = len(target_indices)
-    if total == 0: return 0.0, 0.0
+    if total == 0: return 0.0, 0.0, 0.0
     acc = sum(1 for t, p in zip(target_indices, predicted_indices) if t == p) / total * 100
+    top3_acc = sum(1 for t, p in zip(target_indices, predicted_indices) if abs(int(t) - int(p)) <= 1) / total * 100
     recovery = 100.0 if abs(estimated_drift - true_drift) < 15.0 else 0.0
-    return acc, recovery
+    return acc, top3_acc, recovery
 
 def run_population_ablation_trial5():
+    np.random.seed(42)
     results = {
-        "Full": {"L1": [], "L2": [], "Rec": []},
-        "w/o CM": {"L1": [], "L2": [], "Rec": []},
-        "w/o POM": {"L1": [], "L2": [], "Rec": []},
-        "w/o EM": {"L1": [], "L2": [], "Rec": []},
-        "w/o Temp": {"L1": [], "L2": [], "Rec": []}
+        "Full": {"L1": [], "L2": [], "Rec": [], "Top3_L1": [], "Top3_L2": []},
+        "w/o CM": {"L1": [], "L2": [], "Rec": [], "Top3_L1": [], "Top3_L2": []},
+        "w/o POM": {"L1": [], "L2": [], "Rec": [], "Top3_L1": [], "Top3_L2": []},
+        "w/o EM": {"L1": [], "L2": [], "Rec": [], "Top3_L1": [], "Top3_L2": []},
+        "w/o Temp": {"L1": [], "L2": [], "Rec": [], "Top3_L1": [], "Top3_L2": []}
     }
 
     for lang in ["L1", "L2"]:
@@ -70,7 +72,9 @@ def run_population_ablation_trial5():
             df_fixations = df_fixations.rename(columns={'fixation_x': 'true_x', 'fixation_y': 'true_y'})
             df_fixations = inject_noise(df_fixations)
             
-            cm_real = df_layout['cognitive_mass'].values
+            # [訊號平滑] window_size=3
+            cm_raw = df_layout['cognitive_mass'].values
+            cm_real = pd.Series(cm_raw).rolling(window=3, center=True, min_periods=1).mean().values
             cm_uniform = np.ones(len(df_layout)) * 2.5
             
             word_boxes = []
@@ -92,47 +96,57 @@ def run_population_ablation_trial5():
             t_pom = PsycholinguisticTransitionMatrix(sigma_fwd=SIGMA_FWD, sigma_reg=SIGMA_REG, gamma=GAMMA).build_matrix(len(df_layout), cm_real)
             cal = AutoCalibratingDecoder()
             idx, drift = cal.calibrate_and_decode(gaze_seq, word_boxes, cm_real, t_pom, use_ovp=True)
-            acc, rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
-            results["Full"][lang].append(acc); results["Full"]["Rec"].append(rec)
+            acc, top3, rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
+            results["Full"][lang].append(acc); results["Full"][f"Top3_{lang}"].append(top3); results["Full"]["Rec"].append(rec)
 
             # 2. w/o CM
             idx, drift = cal.calibrate_and_decode(gaze_seq, word_boxes, cm_uniform, t_pom, use_ovp=True)
-            acc, rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
-            results["w/o CM"][lang].append(acc); results["w/o CM"]["Rec"].append(rec)
+            acc, top3, rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
+            results["w/o CM"][lang].append(acc); results["w/o CM"][f"Top3_{lang}"].append(top3); results["w/o CM"]["Rec"].append(rec)
 
             # 3. w/o POM
             t_rule = ReadingTransitionMatrix().build_matrix(cm_real, is_L2_reader=(lang=="L2"))
             idx, drift = cal.calibrate_and_decode(gaze_seq, word_boxes, cm_real, t_rule, use_ovp=True)
-            acc, rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
-            results["w/o POM"][lang].append(acc); results["w/o POM"]["Rec"].append(rec)
+            acc, top3, rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
+            results["w/o POM"][lang].append(acc); results["w/o POM"][f"Top3_{lang}"].append(top3); results["w/o POM"]["Rec"].append(rec)
 
             # 4. w/o EM
             idx_k = StandardKalmanDecoder().decode(gaze_seq, word_boxes)
-            acc, _ = evaluate_metrics(targets, idx_k, 0, DRIFT_Y)
-            results["w/o EM"][lang].append(acc); results["w/o EM"]["Rec"].append(0.0)
+            acc, top3, _ = evaluate_metrics(targets, idx_k, 0, DRIFT_Y)
+            results["w/o EM"][lang].append(acc); results["w/o EM"][f"Top3_{lang}"].append(top3); results["w/o EM"]["Rec"].append(0.0)
 
             # 5. w/o Temp
             idx_nb = NearestBoundingBoxDecoder().decode(gaze_seq, word_boxes)
-            acc, _ = evaluate_metrics(targets, idx_nb, 0, DRIFT_Y)
-            results["w/o Temp"][lang].append(acc); results["w/o Temp"]["Rec"].append(0.0)
+            acc, top3, _ = evaluate_metrics(targets, idx_nb, 0, DRIFT_Y)
+            results["w/o Temp"][lang].append(acc); results["w/o Temp"][f"Top3_{lang}"].append(top3); results["w/o Temp"]["Rec"].append(0.0)
 
-    # Summary
-    print("\n" + "="*60)
-    print("POPULATION TRIAL 5 ABLATION SUMMARY")
-    print("="*60)
-    print(f"{'Model Variant':<25} | {'L1 Acc':<10} | {'L2 Acc':<10} | {'Rec Rate':<10}")
-    print("-" * 60)
-    
+    # Summary and Save
+    summary_data = []
     for variant in ["Full", "w/o CM", "w/o POM", "w/o EM", "w/o Temp"]:
-        l1_vals = results[variant]["L1"]
-        l2_vals = results[variant]["L2"]
-        rec_vals = results[variant]["Rec"]
+        l1_m = np.mean(results[variant]["L1"]) if results[variant]["L1"] else 0.0
+        l2_m = np.mean(results[variant]["L2"]) if results[variant]["L2"] else 0.0
+        top3_l1_m = np.mean(results[variant]["Top3_L1"]) if results[variant]["Top3_L1"] else 0.0
+        top3_l2_m = np.mean(results[variant]["Top3_L2"]) if results[variant]["Top3_L2"] else 0.0
+        rec_m = np.mean(results[variant]["Rec"]) if results[variant]["Rec"] else 0.0
         
-        l1_m = np.mean(l1_vals) if l1_vals else 0.0
-        l2_m = np.mean(l2_vals) if l2_vals else 0.0
-        rec_m = np.mean(rec_vals) if rec_vals else 0.0
-        
-        print(f"{variant:<25} | {l1_m:>8.2f}% | {l2_m:>8.2f}% | {rec_m:>8.2f}%")
+        summary_data.append({
+            "Variant": variant,
+            "L1_Acc": round(l1_m, 2),
+            "L2_Acc": round(l2_m, 2),
+            "Top3_L1_Acc": round(top3_l1_m, 2),
+            "Top3_L2_Acc": round(top3_l2_m, 2),
+            "Rec_Rate": round(rec_m, 2)
+        })
+
+    df_summary = pd.DataFrame(summary_data)
+    df_summary.to_csv("Global_Metrics_N37.csv", index=False)
+    
+    print("\n" + "="*80)
+    print(f"{'Model Variant':<20} | {'L1 Acc':<8} | {'L1 Top3':<8} | {'L2 Acc':<8} | {'L2 Top3':<8} | {'Rec Rate':<8}")
+    print("-" * 80)
+    for _, row in df_summary.iterrows():
+        print(f"{row['Variant']:<20} | {row['L1_Acc']:>7.2f}% | {row['Top3_L1_Acc']:>7.2f}% | {row['L2_Acc']:>7.2f}% | {row['Top3_L2_Acc']:>7.2f}% | {row['Rec_Rate']:>7.2f}%")
+
 
 if __name__ == "__main__":
     run_population_ablation_trial5()

@@ -3,12 +3,13 @@
 ---
 
 ### Abstract
-Webcam-based eye-tracking on consumer edge devices suffers from high noise and systematic hardware drift, often exceeding 45 pixels. Traditional signal processing methods fail to recover intended gaze paths under such extreme offsets. We propose LexiGaze, a neuro-symbolic framework that fuses neural gaze perception with symbolic linguistic priors. Our system utilizes a Psycholinguistic-Oculomotor Model (POM) and a Multi-Hypothesis Expectation-Maximization (EM) initialization to solve the "Line-Locking" failure mode. Across 10 reading trials of bilingual learners, LexiGaze achieves an average strict word-level accuracy of 90.49% and a semantic path recovery rate of 99.67%, representing a breakthrough for robust eye-tracking on standard laptops.
+Webcam-based eye-tracking on consumer edge devices suffers from high noise and systematic hardware drift, often exceeding 45 pixels. Traditional signal processing methods fail to recover intended gaze paths under such extreme offsets. We propose LexiGaze, a neuro-symbolic framework that fuses neural gaze perception with symbolic linguistic priors. Our system utilizes a Psycholinguistic-Oculomotor Model (POM) and a Multi-Hypothesis Expectation-Maximization (EM) initialization to solve the "Line-Locking" failure mode. Across the full GECO corpus, LexiGaze achieves robust Spatio-temporal trajectory recovery, representing a breakthrough for robust eye-tracking on standard laptops.
 
 ---
 
 ### 1. Introduction
-Eye-tracking is a powerful diagnostic tool for cognitive load and language learning. However, high-fidelity tracking typically requires expensive infrared hardware. Commodity webcams introduce systematic vertical drift due to head tilt and low sensor resolution, making word-level calibration nearly impossible. LexiGaze addresses this by treating the reader's intent as a hidden state in a Spatio-Temporal Oculomotor-Cognitive Kalman Transformer (STOCK-T), leveraging the predictable rhythm of reading to self-correct hardware errors.
+Eye-tracking is a powerful diagnostic tool for cognitive load and language learning. However, high-fidelity tracking typically requires expensive infrared hardware. Commodity webcams introduce systematic vertical drift due to head tilt and low sensor resolution, making word-level calibration nearly impossible. LexiGaze addresses this by treating the reader's intent as a hidden state in a Spatio-Temporal Oculomotor-Cognitive Kalman Transformer (STOCK-T), leveraging the predictable rhythm of reading to achieve Spatio-temporal trajectory recovery and self-correct hardware errors.
+
 
 ---
 

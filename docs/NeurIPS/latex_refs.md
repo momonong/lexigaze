@@ -29,11 +29,11 @@ P_{reg}(j | i) \propto \exp\left( -\frac{|j - (i - 1)|}{\sigma_{reg}} \right) \t
 \centering
 \begin{tabular}{lccc}
 \hline
-\textbf{Group} & \textbf{Mean Center Acc} & \textbf{Mean OVP Acc} & \textbf{Semantic Recovery} \\ \hline
-L1 (Native) & 98.61\% & 98.67\% & 100.00\% \\
-L2 (Bilingual) & 86.45\% & 83.69\% & 99.67\% \\ \hline
+\textbf{Group} & \textbf{Strict Accuracy} & \textbf{Top-3 Accuracy} & \textbf{Trajectory Recovery} \\ \hline
+L1 (Native) & 9.83\% & 19.82\% & 67.57\% \\
+L2 (Bilingual) & 13.93\% & 32.38\% & 67.57\% \\ \hline
 \end{tabular}
-\caption{Global performance comparison across 37 subjects and ~370 trials under 45px drift.}
+\caption{Global performance comparison across 37 subjects and ~3,200 trials under 45px vertical drift (Unbiased Baseline).}
 \end{table}
 
 ### Table 2: Noise Robustness Stress Test (Subject pp01)
