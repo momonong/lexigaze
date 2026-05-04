@@ -2,8 +2,7 @@ import os
 import sys
 import pandas as pd
 import numpy as np
-import torch
-import math
+import traceback
 from tqdm import tqdm
 
 # Add project root to path
@@ -44,14 +43,9 @@ def evaluate_metrics(target_indices, predicted_indices, estimated_drift, true_dr
 
 def run_population_ablation_trial5():
     np.random.seed(42)
-    results = {
-        "Full": {"L1": [], "L2": [], "Rec": [], "Top3_L1": [], "Top3_L2": []},
-        "w/o CM": {"L1": [], "L2": [], "Rec": [], "Top3_L1": [], "Top3_L2": []},
-        "w/o POM": {"L1": [], "L2": [], "Rec": [], "Top3_L1": [], "Top3_L2": []},
-        "w/o EM": {"L1": [], "L2": [], "Rec": [], "Top3_L1": [], "Top3_L2": []},
-        "w/o Temp": {"L1": [], "L2": [], "Rec": [], "Top3_L1": [], "Top3_L2": []}
-    }
-
+    # 用來存放所有成功的 Trial 紀錄 (Flattened)
+    all_trial_results = []
+    
     for lang in ["L1", "L2"]:
         pop_dir = f"data/geco/population/{lang}"
         if not os.path.exists(pop_dir):
@@ -66,87 +60,92 @@ def run_population_ablation_trial5():
             
             if not os.path.exists(layout_path) or not os.path.exists(fixations_path):
                 continue
+            
+            # 🛡️ 加入 try-except 防止單一受試者資料損毀導致程式崩潰
+            try:
+                df_layout = pd.read_csv(layout_path)
+                df_fixations = pd.read_csv(fixations_path)
                 
-            df_layout = pd.read_csv(layout_path)
-            df_fixations = pd.read_csv(fixations_path)
-            df_fixations = df_fixations.rename(columns={'fixation_x': 'true_x', 'fixation_y': 'true_y'})
-            df_fixations = inject_noise(df_fixations)
-            
-            # [訊號平滑] window_size=3
-            cm_raw = df_layout['cognitive_mass'].values
-            cm_real = pd.Series(cm_raw).rolling(window=3, center=True, min_periods=1).mean().values
-            cm_uniform = np.ones(len(df_layout)) * 2.5
-            
-            word_boxes = []
-            for _, row in df_layout.iterrows():
-                word_str = str(row['WORD']).strip()
-                # Estimate width: ~12px per character, min 40px
-                w = max(40.0, len(word_str) * 12.0)
-                h = 40.0 # Standard line height estimate
-                word_boxes.append([
-                    row['true_x'] - w/2, 
-                    row['true_y'] - h/2, 
-                    row['true_x'] + w/2, 
-                    row['true_y'] + h/2
-                ])
-            gaze_seq = df_fixations[['noisy_x', 'noisy_y']].values
-            targets = df_fixations['layout_index'].values.astype(int)
+                if df_layout.empty or df_fixations.empty:
+                    continue
+                    
+                df_fixations = df_fixations.rename(columns={'fixation_x': 'true_x', 'fixation_y': 'true_y'})
+                df_fixations = inject_noise(df_fixations)
+                
+                # [訊號平滑] window_size=3
+                cm_raw = df_layout['cognitive_mass'].values
+                cm_real = pd.Series(cm_raw).rolling(window=3, center=True, min_periods=1).mean().values
+                cm_uniform = np.ones(len(df_layout)) * 2.5
+                
+                word_boxes = []
+                for _, row in df_layout.iterrows():
+                    word_str = str(row['WORD']).strip()
+                    w = max(40.0, len(word_str) * 12.0)
+                    h = 40.0
+                    word_boxes.append([
+                        row['true_x'] - w/2, row['true_y'] - h/2, 
+                        row['true_x'] + w/2, row['true_y'] + h/2
+                    ])
+                
+                gaze_seq = df_fixations[['noisy_x', 'noisy_y']].values
+                targets = df_fixations['layout_index'].values.astype(int)
 
-            # 1. Full STOCK-T
-            t_pom = PsycholinguisticTransitionMatrix(sigma_fwd=SIGMA_FWD, sigma_reg=SIGMA_REG, gamma=GAMMA).build_matrix(len(df_layout), cm_real)
-            cal = AutoCalibratingDecoder()
-            idx, drift = cal.calibrate_and_decode(gaze_seq, word_boxes, cm_real, t_pom, use_ovp=True)
-            acc, top3, rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
-            results["Full"][lang].append(acc); results["Full"][f"Top3_{lang}"].append(top3); results["Full"]["Rec"].append(rec)
+                cal = AutoCalibratingDecoder()
+                
+                # 1. Full STOCK-T
+                t_pom = PsycholinguisticTransitionMatrix(sigma_fwd=SIGMA_FWD, sigma_reg=SIGMA_REG, gamma=GAMMA).build_matrix(len(df_layout), cm_real)
+                idx, drift = cal.calibrate_and_decode(gaze_seq, word_boxes, cm_real, t_pom, use_ovp=True)
+                full_acc, full_top3, full_rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
 
-            # 2. w/o CM
-            idx, drift = cal.calibrate_and_decode(gaze_seq, word_boxes, cm_uniform, t_pom, use_ovp=True)
-            acc, top3, rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
-            results["w/o CM"][lang].append(acc); results["w/o CM"][f"Top3_{lang}"].append(top3); results["w/o CM"]["Rec"].append(rec)
+                # 2. w/o CM (Edge-Optimized)
+                idx, drift = cal.calibrate_and_decode(gaze_seq, word_boxes, cm_uniform, t_pom, use_ovp=True)
+                no_cm_acc, no_cm_top3, no_cm_rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
 
-            # 3. w/o POM
-            t_rule = ReadingTransitionMatrix().build_matrix(cm_real, is_L2_reader=(lang=="L2"))
-            idx, drift = cal.calibrate_and_decode(gaze_seq, word_boxes, cm_real, t_rule, use_ovp=True)
-            acc, top3, rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
-            results["w/o POM"][lang].append(acc); results["w/o POM"][f"Top3_{lang}"].append(top3); results["w/o POM"]["Rec"].append(rec)
+                # 3. w/o POM
+                t_rule = ReadingTransitionMatrix().build_matrix(cm_real, is_L2_reader=(lang=="L2"))
+                idx, drift = cal.calibrate_and_decode(gaze_seq, word_boxes, cm_real, t_rule, use_ovp=True)
+                no_pom_acc, no_pom_top3, no_pom_rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
 
-            # 4. w/o EM
-            idx_k = StandardKalmanDecoder().decode(gaze_seq, word_boxes)
-            acc, top3, _ = evaluate_metrics(targets, idx_k, 0, DRIFT_Y)
-            results["w/o EM"][lang].append(acc); results["w/o EM"][f"Top3_{lang}"].append(top3); results["w/o EM"]["Rec"].append(0.0)
+                # 4. w/o EM
+                idx_k = StandardKalmanDecoder().decode(gaze_seq, word_boxes)
+                no_em_acc, no_em_top3, _ = evaluate_metrics(targets, idx_k, 0, DRIFT_Y)
 
-            # 5. w/o Temp
-            idx_nb = NearestBoundingBoxDecoder().decode(gaze_seq, word_boxes)
-            acc, top3, _ = evaluate_metrics(targets, idx_nb, 0, DRIFT_Y)
-            results["w/o Temp"][lang].append(acc); results["w/o Temp"][f"Top3_{lang}"].append(top3); results["w/o Temp"]["Rec"].append(0.0)
+                # 5. w/o Temp
+                idx_nb = NearestBoundingBoxDecoder().decode(gaze_seq, word_boxes)
+                no_temp_acc, no_temp_top3, _ = evaluate_metrics(targets, idx_nb, 0, DRIFT_Y)
 
-    # Summary and Save
-    summary_data = []
-    for variant in ["Full", "w/o CM", "w/o POM", "w/o EM", "w/o Temp"]:
-        l1_m = np.mean(results[variant]["L1"]) if results[variant]["L1"] else 0.0
-        l2_m = np.mean(results[variant]["L2"]) if results[variant]["L2"] else 0.0
-        top3_l1_m = np.mean(results[variant]["Top3_L1"]) if results[variant]["Top3_L1"] else 0.0
-        top3_l2_m = np.mean(results[variant]["Top3_L2"]) if results[variant]["Top3_L2"] else 0.0
-        rec_m = np.mean(results[variant]["Rec"]) if results[variant]["Rec"] else 0.0
-        
-        summary_data.append({
-            "Variant": variant,
-            "L1_Acc": round(l1_m, 2),
-            "L2_Acc": round(l2_m, 2),
-            "Top3_L1_Acc": round(top3_l1_m, 2),
-            "Top3_L2_Acc": round(top3_l2_m, 2),
-            "Rec_Rate": round(rec_m, 2)
-        })
+                # 將此回合結果存入列表
+                all_trial_results.append({
+                    "Subject": sub, "Lang": lang,
+                    "Full_Acc": full_acc, "Full_Top3": full_top3, "Full_Rec": full_rec,
+                    "NoCM_Acc": no_cm_acc, "NoCM_Top3": no_cm_top3, "NoCM_Rec": no_cm_rec,
+                    "NoPOM_Acc": no_pom_acc, "NoPOM_Top3": no_pom_top3, "NoPOM_Rec": no_pom_rec,
+                    "NoEM_Acc": no_em_acc, "NoEM_Top3": no_em_top3, "NoEM_Rec": 0.0,
+                    "NoTemp_Acc": no_temp_acc, "NoTemp_Top3": no_temp_top3, "NoTemp_Rec": 0.0
+                })
+                
+                # 實時存檔 (Checkpointing)：每跑完一個人就存一次，當機也不怕
+                pd.DataFrame(all_trial_results).to_csv("data/geco/benchmark/interim_results.csv", index=False)
 
-    df_summary = pd.DataFrame(summary_data)
-    df_summary.to_csv("Global_Metrics_N37.csv", index=False)
+            except Exception as e:
+                print(f"\n⚠️ Error processing {sub}: {str(e)}")
+                with open("error_log.txt", "a") as f:
+                    f.write(f"Error in {sub}: {traceback.format_exc()}\n")
+                continue
+
+    # 計算最終全局平均
+    df_results = pd.DataFrame(all_trial_results)
     
     print("\n" + "="*80)
-    print(f"{'Model Variant':<20} | {'L1 Acc':<8} | {'L1 Top3':<8} | {'L2 Acc':<8} | {'L2 Top3':<8} | {'Rec Rate':<8}")
-    print("-" * 80)
-    for _, row in df_summary.iterrows():
-        print(f"{row['Variant']:<20} | {row['L1_Acc']:>7.2f}% | {row['Top3_L1_Acc']:>7.2f}% | {row['L2_Acc']:>7.2f}% | {row['Top3_L2_Acc']:>7.2f}% | {row['Rec_Rate']:>7.2f}%")
-
+    print("FINAL NEURIPS TABLE RESULTS (Averaged across valid trials)")
+    print("="*80)
+    
+    for variant, prefix in zip(["STOCK-T (Surprisal-Guided)", "STOCK-T (Edge-Optimized)", "w/o POM", "w/o EM", "w/o Temp"], 
+                               ["Full", "NoCM", "NoPOM", "NoEM", "NoTemp"]):
+        acc = df_results[f"{prefix}_Acc"].mean()
+        top3 = df_results[f"{prefix}_Top3"].mean()
+        rec = df_results[f"{prefix}_Rec"].mean()
+        print(f"{variant:<30} | Acc: {acc:>5.2f}% | Top-3: {top3:>5.2f}% | Recovery: {rec:>5.2f}%")
 
 if __name__ == "__main__":
     run_population_ablation_trial5()
