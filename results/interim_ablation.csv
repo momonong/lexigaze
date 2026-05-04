@@ -1,0 +1,3 @@
+subject_key,lang,subject_id,n_trials_ok,full_word_acc_mean,full_traj_rec_mean,wo_cm_word_acc_mean,wo_cm_traj_rec_mean,wo_pom_word_acc_mean,wo_pom_traj_rec_mean,wo_em_word_acc_mean,wo_em_traj_rec_mean,wo_temp_word_acc_mean,wo_temp_traj_rec_mean
+L1|pp01,L1,pp01,1,62.83185840707964,0.0,96.46017699115043,100.0,59.29203539823009,0.0,1.7699115044247788,0.0,15.929203539823009,0.0
+L2|pp01,L2,pp01,1,75.64102564102564,100.0,78.84615384615384,100.0,66.02564102564102,100.0,3.205128205128205,0.0,14.743589743589745,0.0

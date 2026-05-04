@@ -95,7 +95,17 @@ def evaluate_dual_accuracy(target_indices, predicted_indices):
 
 def run_benchmark():
     print(f"⏳ Loading GECO L2 dataset from {INPUT_EXCEL}...")
-    full_df = pd.read_excel(INPUT_EXCEL)
+    try:
+        # Check size
+        if os.path.exists(INPUT_EXCEL):
+            size = os.path.getsize(INPUT_EXCEL)
+            if size < 50 * 1024 * 1024:
+                print(f"⚠️ Warning: {INPUT_EXCEL} is too small ({size/1024/1024:.1f}MB).")
+        
+        full_df = pd.read_excel(INPUT_EXCEL)
+    except Exception as e:
+        print(f"❌ Error loading Excel data: {e}")
+        return
     
     all_results = []
     

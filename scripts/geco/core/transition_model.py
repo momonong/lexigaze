@@ -80,7 +80,8 @@ class PsycholinguisticTransitionMatrix:
         if cm_max > cm_min:
             norm_cm = (base_cm_array - cm_min) / (cm_max - cm_min)
         else:
-            norm_cm = np.zeros_like(base_cm_array)
+            # Neutral baseline (0.5) if CM is uniform, preventing bias towards/against regressions
+            norm_cm = np.full_like(base_cm_array, 0.5)
         
         for i in range(n):
             for j in range(n):
@@ -90,16 +91,15 @@ class PsycholinguisticTransitionMatrix:
                     p_fwd = np.exp(-((j - (i + 1))**2) / (2 * self.sigma_fwd**2))
                     # 2. Cognitive Modulation (Skipping)
                     # Penalize transition to j if j is cognitively heavy (high CM)
-                    t_matrix[i, j] = p_fwd * (1.0 - self.gamma * norm_cm[j])
+                    # Skill 10 Fix: Ensure penalty doesn't zero out probabilities
+                    t_matrix[i, j] = p_fwd * max(0.1, 1.0 - self.gamma * norm_cm[j])
                 else:
                     # 3. Cognitive Modulation (Regressions & Stays)
                     # Exponential decay from i-1
-                    # Note: j=i is distance 1 from i-1, which is the 'Stay' probability
                     p_reg = np.exp(-abs(j - (i - 1)) / self.sigma_reg)
                     
-                    # Skill 10 Enhancement: Add 0.1 baseline to ensure we don't zero out 
-                    # the possibility of staying on a word or regressing, 
-                    # especially for low-CM words which still need multiple gaze points.
+                    # Skill 10 Enhancement: Ensure baseline is robust enough to allow regressions
+                    # even when CM modulation is disabled.
                     t_matrix[i, j] = p_reg * (norm_cm[i] + 0.1)
             
             # Row-wise normalization (sum to 1.0)

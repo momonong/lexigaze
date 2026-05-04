@@ -151,8 +151,20 @@ def process_subject(df_full, subject_id, group):
 
 def run_analysis():
     print("⏳ Loading GECO datasets...")
-    l1_df = pd.read_excel(L1_EXCEL)
-    l2_df = pd.read_excel(L2_EXCEL)
+    try:
+        # Robust Read
+        for path in [L1_EXCEL, L2_EXCEL]:
+            if os.path.exists(path):
+                size = os.path.getsize(path)
+                if size < 50 * 1024 * 1024:
+                    print(f"⚠️ Warning: {path} is too small ({size/1024/1024:.1f}MB). Likely truncated.")
+        
+        l1_df = pd.read_excel(L1_EXCEL)
+        l2_df = pd.read_excel(L2_EXCEL)
+    except Exception as e:
+        print(f"❌ Error loading Excel data: {e}")
+        print("💡 Suggestion: Ensure files are fully downloaded and not corrupted.")
+        return
     
     l1_subjects = l1_df['PP_NR'].unique()
     l2_subjects = l2_df['PP_NR'].unique()

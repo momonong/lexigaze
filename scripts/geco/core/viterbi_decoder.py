@@ -33,7 +33,8 @@ def viterbi_gaze_decode(gaze_sequence, word_boxes, base_cm, transition_matrix, s
         prob_spatial = np.exp(-0.5 * ( (diff[0]**2 / sx**2) + (diff[1]**2 / sy**2) ))
         emission_prob = prob_spatial * cm_t0[i]
         
-        start_prob = 1.0 / num_words if i > 0 else 0.5 
+        # Skill 3: Uniform start probability to allow data to drive initialization
+        start_prob = 1.0 / num_words 
         
         if emission_prob > 0:
             viterbi[i, 0] = np.log(start_prob) + np.log(emission_prob)

@@ -57,9 +57,10 @@ class DynamicCognitiveField:
         # Update cumulative exposure
         self.exposure += update_inc
         
-        # CM_i(t) = Base_CM_i * exp(-lambda * E_i(t))
+        # CM_i(t) = (Base_CM_i + epsilon) * exp(-lambda * E_i(t))
+        # Skill 1: Adding epsilon to prevent zero-probability deadlocks
         decay_factor = np.exp(-self.lambda_decay * self.exposure)
-        self.current_cm = self.base_cm * decay_factor
+        self.current_cm = (self.base_cm + 0.01) * decay_factor
         
         # Normalize across the sentence (softmax-like or simple sum normalization)
         if np.sum(self.current_cm) > 0:
