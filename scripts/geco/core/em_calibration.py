@@ -19,7 +19,7 @@ class AutoCalibratingDecoder:
         best_likelihood = -np.inf
         best_h = 0
         
-        print(f"🔍 Skill 14: Evaluating {len(self.hypotheses)} drift hypotheses...")
+        # print(f"Skill 14: Evaluating {len(self.hypotheses)} drift hypotheses...")
         
         for h in self.hypotheses:
             # Temporarily shift window by hypothesis h (vertical)
@@ -33,7 +33,7 @@ class AutoCalibratingDecoder:
                 best_initial_indices = indices
                 best_h = h
         
-        print(f"✅ Skill 14: Best hypothesis h={best_h}px (Likelihood: {best_likelihood:.2f})")
+        # print(f"Skill 14: Best hypothesis h={best_h}px (Likelihood: {best_likelihood:.2f})")
         
         # Step 2: M-Step (Maximization / Drift Estimation)
         # Access biologically aligned OVP centers for drift estimation
@@ -59,7 +59,7 @@ class AutoCalibratingDecoder:
             print("⚠️ High variance detected in initial window. Skipping auto-calibration.")
             drift_x, drift_y = 0, 0
             
-        print(f"🔧 Auto-Calibration: Detected Drift ({drift_x:.1f}px, {drift_y:.1f}px)")
+        # print(f"Auto-Calibration: Detected Drift ({drift_x:.1f}px, {drift_y:.1f}px)")
         
         # Step 3: Update & Final Decode
         corrected_gaze = raw_gaze_sequence - np.array([drift_x, drift_y])
