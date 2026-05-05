@@ -30,12 +30,6 @@ SIGMA_Y = 30.0
 # 測試不同的垂直漂移強度 (從完美的 0px 到極端的 60px)
 DRIFT_LEVELS = [0.0, 15.0, 30.0, 45.0, 60.0]
 
-def _parse_drifts_arg(drifts_arg: str) -> list[float]:
-    parts = [p.strip() for p in drifts_arg.split(",") if p.strip()]
-    if not parts:
-        raise ValueError("--drifts must be a comma-separated list, e.g. 0,15,30,45,60,75")
-    return [float(p) for p in parts]
-
 def decode_nearest_y_only(gaze_sequence: np.ndarray, word_boxes: list[list[float]]) -> list[int]:
     """
     A *strict* spatial baseline that ignores X and snaps by vertical proximity only.
@@ -127,25 +121,6 @@ def _sanity_check_noise(df_fixations: pd.DataFrame, drift_y: float) -> dict:
         "n_points": int(len(dy)),
     }
 
-def _print_sanity_preview(tasks: list[tuple], preview_n: int = 3) -> None:
-    """
-    Print a tiny preview to confirm we are injecting drift into noisy_y.
-    Keeps this light so test runs can remain parallel & fast.
-    """
-    for task in tasks[: max(0, int(preview_n))]:
-        lang, sub, trial, _, fixations_path, drift_y = task
-        rng = np.random.default_rng(stable_seed(lang, sub, trial, drift_y))
-        df_fix = pd.read_csv(fixations_path).rename(columns={"fixation_x": "true_x", "fixation_y": "true_y"})
-        df_fix_n = inject_noise(df_fix, drift_y, rng)
-        sc = _sanity_check_noise(df_fix_n, drift_y)
-        if sc.get("ok"):
-            print(
-                f"[SANITY] {lang}/{sub}/{trial} drift={drift_y:.0f}px: "
-                f"Δy mean={sc['dy_mean']:.2f}, median={sc['dy_median']:.2f}, std={sc['dy_std']:.2f} (n={sc['n_points']})"
-            )
-        else:
-            print(f"[SANITY] {lang}/{sub}/{trial} drift={drift_y:.0f}px: failed: {sc}")
-
 def run_noise_tolerance_experiment(
     *,
     test_mode: bool = False,
@@ -154,14 +129,11 @@ def run_noise_tolerance_experiment(
     sample_trials_total: int | None = None,
     sample_seed: int = 42,
     only_drift: float | None = None,
-    drift_levels: list[float] | None = None,
-    plot_wordacc_curve: bool = False,
 ):
     benchmark_dir = os.path.join(PROJECT_ROOT, "data", "geco", "benchmark")
     os.makedirs(benchmark_dir, exist_ok=True)
 
-    if drift_levels is None:
-        drift_levels = DRIFT_LEVELS
+    drift_levels = DRIFT_LEVELS
     if only_drift is not None:
         drift_levels = [float(only_drift)]
 
@@ -180,17 +152,36 @@ def run_noise_tolerance_experiment(
         drifts = [t[5] for t in tasks]
         print(f"[TEST] Lang counts: L1={langs.count('L1')}, L2={langs.count('L2')}")
         print(f"[TEST] Drift counts: " + ", ".join(f"{d:.0f}px={drifts.count(d)}" for d in sorted(set(drifts))))
-        _print_sanity_preview(tasks, preview_n=3)
 
     all_results = []
 
-    with ProcessPoolExecutor() as executor:
-        futures = {executor.submit(process_single_trial_with_drift, task): task for task in tasks}
-        desc = "[TEST] Running Drift Stress Test" if test_mode else "Running Drift Stress Test"
-        for future in tqdm(as_completed(futures), total=len(tasks), desc=desc):
-            res = future.result()
+    if test_mode:
+        # Run sequentially for fast, debuggable sanity checks
+        for task in tqdm(tasks, desc="[TEST] Running small drift set"):
+            lang, sub, trial, layout_path, fixations_path, drift_y = task
+
+            # Pre-check: confirm noisy drift is being applied as expected
+            rng = np.random.default_rng(stable_seed(lang, sub, trial, drift_y))
+            df_fix = pd.read_csv(fixations_path).rename(columns={"fixation_x": "true_x", "fixation_y": "true_y"})
+            df_fix_n = inject_noise(df_fix, drift_y, rng)
+            sc = _sanity_check_noise(df_fix_n, drift_y)
+            if sc.get("ok"):
+                print(
+                    f"[TEST] {lang}/{sub}/{trial} drift={drift_y:.0f}px: Δy mean={sc['dy_mean']:.2f}, "
+                    f"median={sc['dy_median']:.2f}, std={sc['dy_std']:.2f} (n={sc['n_points']})"
+                )
+            else:
+                print(f"[TEST] {lang}/{sub}/{trial} drift={drift_y:.0f}px: sanity check failed: {sc}")
+
+            res = process_single_trial_with_drift(task)
             if res:
                 all_results.append(res)
+    else:
+        with ProcessPoolExecutor() as executor:
+            futures = {executor.submit(process_single_trial_with_drift, task): task for task in tasks}
+            for future in tqdm(as_completed(futures), total=len(tasks), desc="Running Drift Stress Test"):
+                res = future.result()
+                if res: all_results.append(res)
 
     df_results = pd.DataFrame(all_results)
     csv_path = os.path.join(benchmark_dir, "noise_tolerance_results.csv")
@@ -214,93 +205,11 @@ def run_noise_tolerance_experiment(
         df_sum = df_results.groupby("Drift_Y", as_index=False)[cols].mean()
         print("\nMean metrics by drift (%, averaged over trials):")
         print(df_sum.to_string(index=False))
-
-        # Relative improvement of Edge over Baseline on WordAcc at each drift
-        edge = df_sum["STOCK-T_Edge_WordAcc"].to_numpy()
-        base = df_sum["Baseline_WordAcc"].to_numpy()
-        rel = np.where(base > 1e-9, (edge - base) / base * 100.0, np.nan)
-        df_rel = pd.DataFrame({"Drift_Y": df_sum["Drift_Y"], "Edge_vs_Base_WordAcc_RelImprovement_%": rel})
-        print("\nRelative improvement (WordAcc): (Edge - Baseline) / Baseline * 100")
-        print(df_rel.to_string(index=False))
-
-        # Core verification narrative
-        dr = df_sum["Drift_Y"].to_numpy()
-        gap = (df_sum["STOCK-T_Edge_WordAcc"] - df_sum["Baseline_WordAcc"]).to_numpy()
-        after30 = dr >= 30
-        if after30.any():
-            print(
-                f"\n[CHECK] Drift>=30px mean(Edge-Baseline) WordAcc gap: {float(np.nanmean(gap[after30])):.2f} pp"
-            )
-        surp_below = (df_sum["STOCK-T_Surprisal_WordAcc"] < df_sum["STOCK-T_Edge_WordAcc"]).to_numpy()
-        if surp_below.any():
-            first = float(dr[np.argmax(surp_below)])
-            print(f"[CHECK] Surprisal WordAcc drops below Edge at drift≈{first:.0f}px (first occurrence).")
     except Exception as e:
         print(f"[WARN] Could not print console summary: {e}")
 
-    # Plotting
-    if plot_wordacc_curve:
-        plot_robustness_curve_wordacc(df_results, drift_levels=drift_levels)
-    else:
-        # default: line-recovery curve
-        plot_noise_tolerance(df_results)
-
-
-def plot_robustness_curve_wordacc(df_results: pd.DataFrame, drift_levels: list[float]) -> None:
-    """
-    fig_robustness_curve.pdf
-    X: drift_y, Y: WordAcc (%)
-    Lines: Edge, Surprisal, Baseline (2D)
-    """
-    df_agg = df_results.groupby("Drift_Y", as_index=False)[
-        ["STOCK-T_Edge_WordAcc", "STOCK-T_Surprisal_WordAcc", "Baseline_WordAcc"]
-    ].mean()
-
-    # Ensure consistent order on x-axis
-    df_agg = df_agg.sort_values("Drift_Y")
-
-    plt.rcParams.update({"font.family": "serif", "font.size": 12})
-    plt.figure(figsize=(7, 5))
-    plt.plot(
-        df_agg["Drift_Y"],
-        df_agg["STOCK-T_Edge_WordAcc"],
-        marker="o",
-        linewidth=2.5,
-        color="#2ca25f",
-        label="STOCK-T (Edge/Uniform)",
-    )
-    plt.plot(
-        df_agg["Drift_Y"],
-        df_agg["STOCK-T_Surprisal_WordAcc"],
-        marker="s",
-        linewidth=2.5,
-        color="#2b8cbe",
-        label="STOCK-T (Surprisal)",
-    )
-    plt.plot(
-        df_agg["Drift_Y"],
-        df_agg["Baseline_WordAcc"],
-        marker="^",
-        linewidth=2.5,
-        color="#de2d26",
-        linestyle="--",
-        label="Baseline (Spatial 2D)",
-    )
-
-    plt.title("Noise Sensitivity Sweep: Word Accuracy vs. Vertical Drift", fontweight="bold", pad=15)
-    plt.xlabel("Hardware Vertical Drift (px)", fontweight="bold")
-    plt.ylabel("Strict Word Accuracy (%)", fontweight="bold")
-    plt.xticks(sorted(set(drift_levels)))
-    plt.grid(True, linestyle=":", alpha=0.7)
-    plt.legend(loc="best")
-
-    fig_dir = os.path.join(PROJECT_ROOT, "docs", "NeurIPS", "figures")
-    os.makedirs(fig_dir, exist_ok=True)
-    fig_path = os.path.join(fig_dir, "fig_robustness_curve.pdf")
-
-    plt.tight_layout()
-    plt.savefig(fig_path, dpi=300)
-    print(f"Plot saved at: {fig_path}")
+    # 直接畫圖並存到 docs\NeurIPS\figures
+    plot_noise_tolerance(df_results)
 
 def process_single_trial_with_drift(args):
     lang, sub, trial, layout_path, fixations_path, drift_y = args
@@ -416,8 +325,6 @@ if __name__ == "__main__":
     parser.add_argument("--sample-trials", type=int, default=None, help="Randomly sample N unique trials (lang,subject,trial) with --sample-seed.")
     parser.add_argument("--sample-seed", type=int, default=42, help="Seed for --sample-trials sampling.")
     parser.add_argument("--only-drift", type=float, default=None, help="If set, only run one drift level (e.g. 45).")
-    parser.add_argument("--drifts", type=str, default=None, help="Comma-separated drift levels, e.g. 0,15,30,45,60,75")
-    parser.add_argument("--plot-wordacc-curve", action="store_true", help="Plot fig_robustness_curve.pdf (WordAcc vs drift).")
     args = parser.parse_args()
 
     if args.test:
@@ -427,14 +334,9 @@ if __name__ == "__main__":
             limit_trials_per_subject=args.test_trials,
         )
     else:
-        drift_levels = None
-        if args.drifts is not None:
-            drift_levels = _parse_drifts_arg(args.drifts)
         run_noise_tolerance_experiment(
             test_mode=False,
             sample_trials_total=args.sample_trials,
             sample_seed=args.sample_seed,
             only_drift=args.only_drift,
-            drift_levels=drift_levels,
-            plot_wordacc_curve=args.plot_wordacc_curve,
         )

@@ -3,6 +3,8 @@ import sys
 import pandas as pd
 import numpy as np
 import traceback
+import argparse
+import random
 from tqdm import tqdm
 from concurrent.futures import ProcessPoolExecutor, as_completed
 
@@ -143,6 +145,22 @@ def run_full_corpus():
                     
     print(f"Total trials to process: {len(tasks)}")
     
+    return tasks
+
+def _sample_tasks(tasks, sample_trials_total: int, sample_seed: int = 42):
+    # Sample on unique (lang, sub, trial, layout_path, fixations_path)
+    uniq = sorted({t for t in tasks})
+    r = random.Random(int(sample_seed))
+    if len(uniq) > int(sample_trials_total):
+        uniq = r.sample(uniq, int(sample_trials_total))
+    return uniq
+
+def run_full_corpus_parallel(*, sample_trials_total: int | None = None, sample_seed: int = 42):
+    tasks = run_full_corpus()
+    if sample_trials_total is not None:
+        tasks = _sample_tasks(tasks, sample_trials_total=sample_trials_total, sample_seed=sample_seed)
+        print(f"[SAMPLE] Using {len(tasks)} trials (seed={sample_seed})")
+
     all_trial_results = []
     # 啟動多進程池 (自動抓取你的 Ultra 9 所有核心)
     with ProcessPoolExecutor() as executor:
@@ -158,4 +176,13 @@ def run_full_corpus():
     print("Evaluation completed. Saved to data/geco/benchmark/full_corpus_results.csv")
 
 if __name__ == "__main__":
-    run_full_corpus()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--test", action="store_true", help="Run a quick sampled subset (parallel).")
+    parser.add_argument("--sample-trials", type=int, default=50, help="Trials to sample in --test mode.")
+    parser.add_argument("--sample-seed", type=int, default=42, help="Seed for --sample-trials sampling.")
+    args = parser.parse_args()
+
+    if args.test:
+        run_full_corpus_parallel(sample_trials_total=args.sample_trials, sample_seed=args.sample_seed)
+    else:
+        run_full_corpus_parallel(sample_trials_total=None)

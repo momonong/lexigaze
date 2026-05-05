@@ -41,8 +41,15 @@ def main():
     lines.append(f"Drift levels (px): {drift_levels}")
     lines.append("")
 
-    agg_cols = ["STOCK-T_Edge_Rec", "STOCK-T_Surprisal_Rec", "Baseline_Rec"]
-    has_y = "BaselineY_Rec" in df.columns
+    # Backward compatible: accept either old *_Rec columns or the new dual-metric columns.
+    if "STOCK-T_Edge_LineRec" in df.columns:
+        agg_cols = ["STOCK-T_Edge_LineRec", "STOCK-T_Surprisal_LineRec", "Baseline_LineRec"]
+        has_y = "BaselineY_LineRec" in df.columns
+        y_col = "BaselineY_LineRec"
+    else:
+        agg_cols = ["STOCK-T_Edge_Rec", "STOCK-T_Surprisal_Rec", "Baseline_Rec"]
+        has_y = "BaselineY_Rec" in df.columns
+        y_col = "BaselineY_Rec"
     if has_y:
         agg_cols.append("BaselineY_Rec")
 
@@ -54,12 +61,18 @@ def main():
         header += "\tBaseline_Y_only"
     lines.append(header)
     for _, row in df_agg.iterrows():
-        line = (
-            f"{row['Drift_Y']:.0f}\t{row['STOCK-T_Edge_Rec']:.2f}\t"
-            f"{row['STOCK-T_Surprisal_Rec']:.2f}\t{row['Baseline_Rec']:.2f}"
-        )
+        if "STOCK-T_Edge_LineRec" in df.columns:
+            line = (
+                f"{row['Drift_Y']:.0f}\t{row['STOCK-T_Edge_LineRec']:.2f}\t"
+                f"{row['STOCK-T_Surprisal_LineRec']:.2f}\t{row['Baseline_LineRec']:.2f}"
+            )
+        else:
+            line = (
+                f"{row['Drift_Y']:.0f}\t{row['STOCK-T_Edge_Rec']:.2f}\t"
+                f"{row['STOCK-T_Surprisal_Rec']:.2f}\t{row['Baseline_Rec']:.2f}"
+            )
         if has_y:
-            line += f"\t{row['BaselineY_Rec']:.2f}"
+            line += f"\t{row[y_col]:.2f}"
         lines.append(line)
     lines.append("")
 
