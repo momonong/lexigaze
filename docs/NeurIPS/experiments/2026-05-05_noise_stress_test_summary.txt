@@ -1,0 +1,33 @@
+LexiGaze — Noise stress test (aggregated)
+Generated: 2026-05-05
+Source CSV: data/geco/benchmark/noise_tolerance_results.csv
+
+METRIC: Trajectory recovery = fraction of fixations where the decoded word lies on the same typographic line as the ground-truth word (lines inferred from layout true_y gaps > 22px).
+This definition applies to STOCK-T and spatial baselines (fair comparison; no drift oracle for baseline).
+
+Participants (Lang x Subject pairs): 37
+Unique trial IDs in table: 178
+Drift levels (px): [np.float64(0.0), np.float64(15.0), np.float64(30.0), np.float64(45.0), np.float64(60.0)]
+
+Mean line-recovery (%) by drift_y
+drift_px	STOCK-T_Edge	STOCK-T_Surprisal	Baseline_spatial
+0	57.10	54.44	66.37
+15	53.17	49.98	63.09
+30	54.86	51.51	55.05
+45	51.42	47.78	44.69
+60	38.88	36.95	34.59
+
+Mean line-recovery (%) by drift_y and Lang
+drift_px	Lang	STOCK-T_Edge	STOCK-T_Surprisal	Baseline_spatial
+0	L1	55.71	53.20	66.17
+0	L2	58.59	55.78	66.58
+15	L1	51.76	49.00	62.78
+15	L2	54.69	51.03	63.41
+30	L1	52.88	49.97	54.62
+30	L2	57.00	53.16	55.50
+45	L1	50.42	46.87	44.35
+45	L2	52.51	48.76	45.05
+60	L1	38.39	36.76	34.10
+60	L2	39.42	37.15	35.12
+
+Rows per (Lang, Subject): min=700, max=890, mean=796.2

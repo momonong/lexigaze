@@ -24,10 +24,9 @@ SIGMA_X = 40.0
 SIGMA_Y = 30.0
 
 def inject_noise(df, drift_y=DRIFT_Y):
-    np.random.seed(42)
     df['true_x'] = pd.to_numeric(df['true_x'], errors='coerce')
     df['true_y'] = pd.to_numeric(df['true_y'], errors='coerce')
-    df = df.dropna(subset=['true_x', 'true_y'])
+    df = df.dropna(subset=['true_x', 'true_y']).copy()
     n = len(df)
     df['noisy_x'] = df['true_x'] + np.random.normal(0, SIGMA_X, n)
     df['noisy_y'] = df['true_y'] + np.random.normal(0, SIGMA_Y, n) + drift_y
@@ -75,6 +74,10 @@ def run_full_corpus():
                         continue
                         
                     df_fixations = df_fixations.rename(columns={'fixation_x': 'true_x', 'fixation_y': 'true_y'})
+                    
+                    # Academic Reproducibility: Use the same hash-based seed logic as noise_tolerance script
+                    np.random.seed(abs(hash(sub + trial + str(DRIFT_Y))) % (2**32 - 1))
+                    
                     df_fixations = inject_noise(df_fixations, DRIFT_Y)
                     if df_fixations.empty:
                         continue

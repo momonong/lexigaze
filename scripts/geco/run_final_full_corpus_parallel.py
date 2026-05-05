@@ -12,9 +12,9 @@ if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
 from scripts.geco.core.transition_model import ReadingTransitionMatrix, PsycholinguisticTransitionMatrix
-from scripts.geco.core.viterbi_decoder import viterbi_gaze_decode
 from scripts.geco.core.em_calibration import AutoCalibratingDecoder
 from scripts.geco.core.baseline_decoders import NearestBoundingBoxDecoder, StandardKalmanDecoder
+from scripts.geco.core.geco_metrics import evaluate_word_and_recovery, stable_seed, word_line_ids_from_layout
 
 # Params
 SIGMA_FWD = 0.8
@@ -24,31 +24,21 @@ DRIFT_Y = 45.0
 SIGMA_X = 40.0
 SIGMA_Y = 30.0
 
-def inject_noise(df, drift_y=DRIFT_Y):
-    # 解決 SettingWithCopyWarning：加上 .copy()
+def inject_noise(df, drift_y, rng):
     df['true_x'] = pd.to_numeric(df['true_x'], errors='coerce')
     df['true_y'] = pd.to_numeric(df['true_y'], errors='coerce')
-    df = df.dropna(subset=['true_x', 'true_y']).copy() 
-    
-    n = len(df)
-    df['noisy_x'] = df['true_x'] + np.random.normal(0, SIGMA_X, n)
-    df['noisy_y'] = df['true_y'] + np.random.normal(0, SIGMA_Y, n) + drift_y
-    return df
+    df = df.dropna(subset=['true_x', 'true_y']).copy()
 
-def evaluate_metrics(target_indices, predicted_indices, estimated_drift, true_drift):
-    total = len(target_indices)
-    if total == 0: return 0.0, 0.0, 0.0
-    acc = sum(1 for t, p in zip(target_indices, predicted_indices) if t == p) / total * 100
-    top3_acc = sum(1 for t, p in zip(target_indices, predicted_indices) if abs(int(t) - int(p)) <= 1) / total * 100
-    recovery = 100.0 if abs(estimated_drift - true_drift) < 15.0 else 0.0
-    return acc, top3_acc, recovery
+    n = len(df)
+    df['noisy_x'] = df['true_x'] + rng.normal(0, SIGMA_X, n)
+    df['noisy_y'] = df['true_y'] + rng.normal(0, SIGMA_Y, n) + drift_y
+    return df
 
 # --- 將原本的內層迴圈抽出來，變成一個獨立的 Worker Function ---
 def process_single_trial(args):
     lang, sub, trial, layout_path, fixations_path = args
-    # 為了確保平行運算時亂數不重複，每個 process 給予基於試驗名稱的 seed
-    np.random.seed(abs(hash(sub + trial)) % (2**32 - 1)) 
-    
+    rng = np.random.default_rng(stable_seed(lang, sub, trial, DRIFT_Y))
+
     try:
         df_layout = pd.read_csv(layout_path)
         df_fixations = pd.read_csv(fixations_path)
@@ -57,10 +47,12 @@ def process_single_trial(args):
             return None
             
         df_fixations = df_fixations.rename(columns={'fixation_x': 'true_x', 'fixation_y': 'true_y'})
-        df_fixations = inject_noise(df_fixations, DRIFT_Y)
+        df_fixations = inject_noise(df_fixations, DRIFT_Y, rng)
         if df_fixations.empty:
             return None
-        
+
+        line_by_word = word_line_ids_from_layout(df_layout)
+
         cm_raw = df_layout['cognitive_mass'].values
         cm_real = pd.Series(cm_raw).rolling(window=3, center=True, min_periods=1).mean().values
         cm_uniform = np.ones(len(df_layout)) * 2.5
@@ -83,32 +75,42 @@ def process_single_trial(args):
         # 1. STOCK-T_Edge
         t_pom = PsycholinguisticTransitionMatrix(sigma_fwd=SIGMA_FWD, sigma_reg=SIGMA_REG, gamma=GAMMA).build_matrix(len(df_layout), cm_real)
         idx, drift = cal.calibrate_and_decode(gaze_seq, word_boxes, cm_uniform, t_pom, use_ovp=True)
-        edge_acc, edge_top3, edge_rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
+        edge_acc, edge_top3, edge_rec, _ = evaluate_word_and_recovery(
+            targets, idx, line_by_word, drift[1], DRIFT_Y
+        )
 
         # 2. STOCK-T_Surprisal
         idx, drift = cal.calibrate_and_decode(gaze_seq, word_boxes, cm_real, t_pom, use_ovp=True)
-        surp_acc, surp_top3, surp_rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
+        surp_acc, surp_top3, surp_rec, _ = evaluate_word_and_recovery(
+            targets, idx, line_by_word, drift[1], DRIFT_Y
+        )
 
         # 3. w/o_POM
         t_rule = ReadingTransitionMatrix().build_matrix(cm_real, is_L2_reader=(lang=="L2"))
         idx, drift = cal.calibrate_and_decode(gaze_seq, word_boxes, cm_uniform, t_rule, use_ovp=True)
-        no_pom_acc, no_pom_top3, no_pom_rec = evaluate_metrics(targets, idx, drift[1], DRIFT_Y)
+        no_pom_acc, no_pom_top3, no_pom_rec, _ = evaluate_word_and_recovery(
+            targets, idx, line_by_word, drift[1], DRIFT_Y
+        )
 
         # 4. w/o_EM
         idx_k = StandardKalmanDecoder().decode(gaze_seq, word_boxes)
-        no_em_acc, no_em_top3, _ = evaluate_metrics(targets, idx_k, 0, DRIFT_Y)
+        no_em_acc, no_em_top3, no_em_rec, _ = evaluate_word_and_recovery(
+            targets, idx_k, line_by_word, None, DRIFT_Y
+        )
 
         # 5. w/o_Temp
         idx_nb = NearestBoundingBoxDecoder().decode(gaze_seq, word_boxes)
-        no_temp_acc, no_temp_top3, _ = evaluate_metrics(targets, idx_nb, 0, DRIFT_Y)
+        no_temp_acc, no_temp_top3, no_temp_rec, _ = evaluate_word_and_recovery(
+            targets, idx_nb, line_by_word, None, DRIFT_Y
+        )
 
         return {
             "Subject": sub, "Lang": lang, "Trial": trial,
             "STOCK-T_Edge_Acc": edge_acc, "STOCK-T_Edge_Top3": edge_top3, "STOCK-T_Edge_Rec": edge_rec,
             "STOCK-T_Surprisal_Acc": surp_acc, "STOCK-T_Surprisal_Top3": surp_top3, "STOCK-T_Surprisal_Rec": surp_rec,
             "w/o_POM_Acc": no_pom_acc, "w/o_POM_Top3": no_pom_top3, "w/o_POM_Rec": no_pom_rec,
-            "w/o_EM_Acc": no_em_acc, "w/o_EM_Top3": no_em_top3, "w/o_EM_Rec": 0.0,
-            "w/o_Temp_Acc": no_temp_acc, "w/o_Temp_Top3": no_temp_top3, "w/o_Temp_Rec": 0.0
+            "w/o_EM_Acc": no_em_acc, "w/o_EM_Top3": no_em_top3, "w/o_EM_Rec": no_em_rec,
+            "w/o_Temp_Acc": no_temp_acc, "w/o_Temp_Top3": no_temp_top3, "w/o_Temp_Rec": no_temp_rec
         }
         
     except Exception as e:

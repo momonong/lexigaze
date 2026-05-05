@@ -1,0 +1,22 @@
+LexiGaze — Full GECO corpus benchmark (+45px vertical drift, axis-aligned Gaussian noise)
+Generated: 2026-05-05
+Source CSV: data/geco/benchmark/full_corpus_results.csv
+
+METRIC: Trajectory recovery = line-level consistency (predicted word same typographic line as target).
+
+Total trial rows: 5892
+Participants L1: 18, L2: 19, combined (Lang x Subject): 37
+
+Mean ± std (%) by model (columns: L1_mean, L1_std, L2_mean, L2_std, overall_mean, overall_std)
+STOCK-T (Edge/Uniform) | Word_Acc: L1 13.96±11.77, L2 13.53±10.71, all 13.75±11.27
+STOCK-T (Edge/Uniform) | Trajectory_LineRec: L1 50.42±24.05, L2 52.51±24.08, all 51.42±24.09
+STOCK-T (Surprisal) | Word_Acc: L1 12.47±11.24, L2 11.90±10.03, all 12.19±10.68
+STOCK-T (Surprisal) | Trajectory_LineRec: L1 46.87±24.57, L2 48.76±24.47, all 47.78±24.54
+w/o POM (Rule-based) | Word_Acc: L1 6.19±6.54, L2 3.77±3.64, all 5.02±5.48
+w/o POM (Rule-based) | Trajectory_LineRec: L1 33.63±17.94, L2 28.78±13.23, all 31.29±16.03
+w/o EM (Kalman) | Word_Acc: L1 4.19±2.18, L2 4.16±2.11, all 4.17±2.14
+w/o EM (Kalman) | Trajectory_LineRec: L1 44.41±12.10, L2 45.05±11.57, all 44.72±11.85
+w/o Temp (Nearest) | Word_Acc: L1 11.88±4.58, L2 11.22±3.88, all 11.56±4.27
+w/o Temp (Nearest) | Trajectory_LineRec: L1 44.35±10.80, L2 45.05±10.16, all 44.69±10.50
+
+Trials per (Lang, Subject): min=140, max=178, mean=159.2

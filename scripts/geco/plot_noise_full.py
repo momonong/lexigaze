@@ -4,7 +4,8 @@ import os
 
 def plot_from_csv():
     # 1. 讀取你剛剛花 43 分鐘跑完並存好的寶貴數據！
-    csv_path = r"D:\projects\lexigaze\data\geco\benchmark\noise_tolerance_results.csv"
+    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+    csv_path = os.path.join(PROJECT_ROOT, "data", "geco", "benchmark", "noise_tolerance_results.csv")
     print(f"Loading data from {csv_path}...")
     df_results = pd.read_csv(csv_path)
     
@@ -22,7 +23,7 @@ def plot_from_csv():
     
     plt.title('Noise Tolerance: OVP Washout Effect', fontweight='bold', pad=15)
     plt.xlabel('Hardware Vertical Drift (px)', fontweight='bold')
-    plt.ylabel('Trajectory Recovery Rate (%)', fontweight='bold')
+    plt.ylabel('Line recovery rate (%)', fontweight='bold')
     plt.ylim(-5, 105)
     plt.xticks(DRIFT_LEVELS)
     plt.grid(True, linestyle=':', alpha=0.7)
@@ -33,7 +34,6 @@ def plot_from_csv():
     plt.text(32, 85, 'Washout\nThreshold', color='gray', fontsize=10)
 
     # 4. 存檔到 NeurIPS 資料夾
-    PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
     neurips_fig_dir = os.path.join(PROJECT_ROOT, "docs", "NeurIPS", "figures")
     os.makedirs(neurips_fig_dir, exist_ok=True)
     plot_path = os.path.join(neurips_fig_dir, "fig_noise_degradation.pdf")
