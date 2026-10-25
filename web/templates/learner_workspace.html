@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>LexiGaze｜閱讀與我的學習紀錄</title>
+    <link rel="stylesheet" href="/learner-workspace/assets/learner_workspace.css">
+    <script src="/learner-workspace/assets/learner_workspace.js" defer></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#workspace">跳到主要內容</a>
+    <header class="site-header">
+      <div class="brand" aria-label="LexiGaze">
+        <span class="brand-mark" aria-hidden="true">L<span>g</span></span>
+        <span><strong>LexiGaze</strong><small>Read. Reflect. Learn about your learning.</small></span>
+      </div>
+      <span class="session-chip"><span aria-hidden="true"></span>本機閱讀與紀錄回顧</span>
+    </header>
+
+    <main id="workspace" tabindex="-1" aria-busy="false">
+      <section id="intro-view" class="intro-view" aria-labelledby="intro-heading">
+        <div class="intro-main">
+          <p class="eyebrow">English reading, with a little reflection</p>
+          <h1 id="intro-heading" tabindex="-1">從一次閱讀，<br>多了解一點<span>自己的學習。</span></h1>
+          <p class="intro-copy">讀兩篇英文短文，試著理解語境中的意思，再看看換個情境時，你會怎麼回答。讓作答、信心與想複習的內容，成為下一步學習的起點。</p>
+          <div class="intro-facts" aria-label="本次內容">
+            <span><strong>2</strong> 篇短文</span><span><strong>10</strong> 題作答</span><span>相機保持關閉</span>
+          </div>
+          <button id="start-button" class="button button-primary" type="button">開始閱讀 <span aria-hidden="true">↗</span></button>
+          <p class="quiet-note">不需帳號。本次紀錄建立後 30 分鐘有效，請在同一頁完成；重新整理會失去目前的進度。</p>
+          <button id="open-record-button" class="button button-secondary" type="button">重新開啟已下載的紀錄</button>
+          <p class="quiet-note">僅在此頁讀取你選擇的本機 JSON，回顧原文、作答與複習清單。</p>
+        </div>
+        <aside class="journey-card" aria-label="閱讀流程">
+          <p class="eyebrow">Your reading session</p>
+          <h2>把閱讀變成<br>看得懂的學習紀錄</h2>
+          <ol class="journey-list">
+            <li><span class="step-number">01</span><div><strong>先專心讀</strong><p>先看文章，準備好後再開始作答。</p></div></li>
+            <li><span class="step-number">02</span><div><strong>回答，也說說把握</strong><p>每題鎖定答案後，留下信心與複習意願。</p></div></li>
+            <li><span class="step-number">03</span><div><strong>看懂這次的表現</strong><p>核對答案、回看語境，整理想複習的內容。</p></div></li>
+          </ol>
+          <div class="journey-footer">語境字義 <span>·</span> 文章理解 <span>·</span> 新語境應用</div>
+        </aside>
+      </section>
+
+      <section id="task-view" class="task-view" hidden aria-labelledby="task-heading">
+        <div class="task-topline">
+          <div><p class="eyebrow" id="block-label"></p><p id="task-progress" class="progress-copy"></p></div>
+          <div id="progress-indicator" class="progress-indicator" role="progressbar" aria-label="作答進度" aria-valuemin="0" aria-valuemax="10" aria-valuenow="0"><div id="progress-fill" class="progress-fill progress-0"></div></div>
+        </div>
+        <nav class="phase-track" aria-label="目前步驟">
+          <span data-phase="reading">閱讀</span><span aria-hidden="true">—</span><span data-phase="answering">作答</span><span aria-hidden="true">—</span><span data-phase="confidence">把握程度</span><span aria-hidden="true">—</span><span data-phase="review">複習意願</span>
+        </nav>
+        <div id="task-content" class="task-content"></div>
+      </section>
+
+      <section id="profile-view" class="profile-view" hidden aria-labelledby="profile-heading">
+        <div class="profile-heading">
+          <div><p class="eyebrow">Your learner profile · This session</p><h1 id="profile-heading" tabindex="-1">我的本次學習紀錄</h1><p>把答得如何、有多少把握，以及想再看的內容放在一起。</p></div>
+          <span id="record-source" class="complete-badge">本次紀錄 · 作答已完成</span>
+        </div>
+        <div id="dimension-cards" class="dimension-grid"></div>
+        <div id="profile-summary" class="profile-summary"></div>
+        <section class="profile-section" aria-labelledby="word-evidence-heading">
+          <div class="section-heading"><div><p class="eyebrow">Words in context</p><h2 id="word-evidence-heading">六個詞，各自的作答線索</h2></div><p>一個詞的不同語境，分開記錄。</p></div>
+          <div id="word-evidence" class="word-grid"></div>
+        </section>
+        <section class="profile-section" aria-labelledby="review-heading">
+          <div class="section-heading"><div><p class="eyebrow">Read it again, with context</p><h2 id="review-heading">回到語境，核對每一題</h2></div><div class="review-filters" role="group" aria-label="篩選核對題目"><button id="filter-all" type="button" aria-pressed="true">全部題目</button><button id="filter-requested" type="button" aria-pressed="false">我想複習的</button></div></div>
+          <p id="review-count" class="quiet-note" role="status" aria-live="polite"></p>
+          <div id="item-review" class="review-list"></div>
+        </section>
+        <aside class="profile-boundary"><strong>這份紀錄會繼續留白的地方</strong><p>這次還沒有檢查隔天是否記得，也沒有眼動資料或認知能力評量。紀錄描述這次題目的表現，還不能代表長期掌握程度。</p></aside>
+        <div class="profile-actions">
+          <button id="download-record-button" type="button" class="button button-primary">下載本次作答紀錄</button>
+          <button id="open-record-from-profile-button" type="button" class="button button-secondary">開啟另一份已下載紀錄</button>
+          <button id="close-record-button" type="button" class="button button-secondary" hidden>回到首頁</button>
+          <button id="restart-button" type="button" class="button button-secondary">清空紀錄，重新開始</button>
+          <p id="record-storage-note" class="quiet-note">下載後由你保留；系統不會自動保存跨次個人檔案。</p>
+        </div>
+      </section>
+
+      <input id="record-file-input" type="file" accept=".json,application/json" hidden aria-label="選擇已下載的 LexiGaze 作答紀錄">
+      <p id="record-file-status" class="quiet-note" role="status" aria-live="polite"></p>
+
+      <section id="error-panel" class="error-panel" hidden aria-labelledby="error-heading">
+        <h2 id="error-heading" tabindex="-1">這一步還沒有完成</h2><p id="error-message" role="alert"></p>
+        <div class="error-actions"><button id="retry-button" class="button button-secondary" type="button">重新確認並繼續</button><button id="error-reset-button" class="button button-quiet" type="button">清空並回到開始</button></div>
+      </section>
+      <p id="request-status" class="request-status" role="status" aria-live="polite"></p>
+    </main>
+
+    <footer class="site-footer"><span>LexiGaze · 英文閱讀與學習</span><p>開發預覽：題目與個人化功能仍待驗證。作答暫存於本機記憶體，建立 30 分鐘後失效；下載檔案由你保留，清空本次紀錄不會刪除檔案。</p></footer>
+    <noscript>此閱讀流程需要 JavaScript。請啟用後重新整理。</noscript>
+  </body>
+</html>

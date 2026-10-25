@@ -1,0 +1,2 @@
+# Lightweight local learner workspace; no sensor or model runtime.
+Flask==3.1.3

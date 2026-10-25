@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>LexiGaze｜客觀閱讀流程預覽</title>
+    <link rel="stylesheet" href="/objective-profile/assets/objective_walkthrough.css">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="/objective-profile" aria-label="LexiGaze 客觀閱讀流程預覽首頁">
+        <span class="brand-mark" aria-hidden="true">LG</span>
+        <span>
+          <strong>LexiGaze</strong>
+          <small>Objective reading walkthrough</small>
+        </span>
+      </a>
+      <span class="header-state">研究者本人預覽</span>
+    </header>
+
+    <main>
+      <section id="intro-view" class="intro-shell">
+        <div class="eyebrow">L0 measurement walkthrough</div>
+        <h1>先確認這段流程，能不能清楚地觀察一小部分英語閱讀作答</h1>
+        <p class="hero-copy">
+          你會閱讀兩篇短文，完成六題語境字義、兩題文章理解，以及兩題換一個情境再判斷。
+          短文在作答時會保留，避免把記憶負擔混進閱讀理解。
+        </p>
+
+        <div class="fact-row" aria-label="流程摘要">
+          <div><strong>2</strong><span>篇短文</span></div>
+          <div><strong>10</strong><span>題客觀題</span></div>
+          <div><strong>10–15</strong><span>分鐘</span></div>
+        </div>
+
+        <div class="boundary-grid">
+          <article class="boundary-card boundary-card--yes">
+            <p class="card-kicker">這次會得到</p>
+            <h2>一次、限於這十題的作答摘要</h2>
+            <p>分開呈現語境字義、文章理解與換情境題，不合成能力總分。</p>
+          </article>
+          <article class="boundary-card boundary-card--no">
+            <p class="card-kicker">這次不會判斷</p>
+            <h2>你的認知能力或英文程度</h2>
+            <p>不產生 CEFR、注意力、記憶力、閱讀速度、穩定 learner type 或學習效果結論。</p>
+          </article>
+        </div>
+
+        <div class="privacy-strip">
+          <span>不開相機</span>
+          <span>不要求姓名或背景</span>
+          <span>不寫入磁碟</span>
+          <span>重新整理即清空</span>
+        </div>
+
+        <div class="intro-action">
+          <button id="start-button" class="button button--primary" type="button">
+            開始我的一次流程檢查
+          </button>
+          <p id="intro-error" class="inline-message" role="alert"></p>
+          <small>請自然作答；這次結果只用來檢查軟體流程，不是研究資料。</small>
+        </div>
+      </section>
+
+      <section id="task-view" class="task-shell" hidden>
+        <div class="task-status">
+          <div class="progress-copy">
+            <span id="stage-label">第 1 部分，共 3 部分</span>
+            <strong id="progress-title">短文一</strong>
+          </div>
+          <div class="elapsed" aria-label="已使用時間">
+            <span>已使用</span>
+            <strong id="elapsed-time">00:00</strong>
+          </div>
+        </div>
+        <div class="progress-track" aria-hidden="true">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+
+        <div id="stage-content" class="stage-content"></div>
+        <p id="stage-message" class="inline-message" role="status" aria-live="polite"></p>
+
+        <div class="task-actions">
+          <button id="back-button" class="button button--secondary" type="button">回到上一部分</button>
+          <button id="next-button" class="button button--primary" type="button">下一部分</button>
+        </div>
+      </section>
+
+      <section id="result-view" class="result-shell" hidden aria-live="polite">
+        <div class="result-heading">
+          <div>
+            <div class="eyebrow">Completed software preview</div>
+            <h1>本次英語閱讀作答摘要</h1>
+            <p>以下只描述這十題中實際觀察到的作答，不是能力診斷。</p>
+          </div>
+          <div class="completion-time">
+            <span>總完成時間</span>
+            <strong id="result-time">—</strong>
+            <small>流程耗時僅供 UX 檢查，不判斷閱讀快慢</small>
+          </div>
+        </div>
+
+        <div id="score-cards" class="score-grid"></div>
+
+        <section class="result-section">
+          <div class="section-heading">
+            <div>
+              <p class="card-kicker">Same-session evidence</p>
+              <h2>兩個詞在另一個情境中的作答</h2>
+            </div>
+          </div>
+          <div id="paired-evidence" class="evidence-grid"></div>
+        </section>
+
+        <section class="result-section">
+          <div class="section-heading">
+            <div>
+              <p class="card-kicker">Answer review</p>
+              <h2>逐題核對</h2>
+            </div>
+            <p id="idk-summary" class="muted"></p>
+          </div>
+          <div id="item-review" class="review-list"></div>
+        </section>
+
+        <section class="claim-panel">
+          <p class="card-kicker">這份摘要的邊界</p>
+          <h2>它還不是有效的 learner profile</h2>
+          <p>
+            題目尚未通過正式內容審查與經驗驗證；你也看過專案設計。因此這次只能證明頁面流程、
+            伺服器計分與結果說明是否正常，不能證明題目效度、一般認知能力、英文程度、gaze 效用或學習效果。
+          </p>
+        </section>
+
+        <div class="result-actions">
+          <button id="restart-button" class="button button--secondary" type="button">
+            清空並重新開始
+          </button>
+          <p>重新整理或關閉頁面後，本次答案即消失。</p>
+        </div>
+      </section>
+
+      <section id="fatal-view" class="fatal-shell" hidden role="alert">
+        <p class="card-kicker">流程無法繼續</p>
+        <h1>本機預覽沒有正確載入</h1>
+        <p id="fatal-message">請停止本次流程，不要把不完整頁面當成結果。</p>
+        <button id="fatal-reload-button" class="button button--secondary" type="button">重新載入</button>
+      </section>
+    </main>
+
+    <footer>
+      <span>LexiGaze researcher preview</span>
+      <span>Localhost · no-store · no-camera · no-model</span>
+    </footer>
+
+    <noscript>此流程需要 JavaScript；未啟用時不會收集或儲存任何作答。</noscript>
+    <script src="/objective-profile/assets/objective_walkthrough.js" defer></script>
+  </body>
+</html>
